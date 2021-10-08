@@ -4,6 +4,7 @@ import { Position } from "../positionMotion.js";
 export const Renderable = defineComponent({
   visible: Types.i8,
   shape: Types.i8,
+  color: Types.ui32,
   mouseOver: Types.i8,
   mouseDown: Types.i8,
   mouseClicked: Types.i8,
@@ -18,6 +19,7 @@ export const cameraFocusQuery = defineQuery([Position, CameraFocus]);
 
 export const RenderableShapes = [
   "Default",
+  "Ball",
   "Node",
   "GatewayNode",
   "StorageNode",

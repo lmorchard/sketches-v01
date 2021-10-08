@@ -1,4 +1,4 @@
-import { defineSystem, addEntity, addComponent, pipe, removeComponent } from "bitecs";
+import { addEntity, addComponent, pipe, removeComponent } from "bitecs";
 import * as Stats from "../../lib/stats.js";
 import * as World from "../../lib/world.js";
 import * as Viewport from "../../lib/viewport/pixi.js";
@@ -10,7 +10,11 @@ import {
   renderQuery,
   cameraFocusQuery,
 } from "../../lib/viewport/index.js";
-import { movementSystem, Position, Velocity } from "../../lib/positionMotion.js";
+import {
+  movementSystem,
+  Position,
+  Velocity,
+} from "../../lib/positionMotion.js";
 import { setupTwiddles } from "../twiddles.js";
 
 async function main() {
@@ -30,14 +34,14 @@ async function main() {
   for (const renderableName of RenderableShapes) {
     const eid = addEntity(world);
     lastEid = eid;
-    
+
     addComponent(world, Renderable, eid);
     addComponent(world, Position, eid);
     addComponent(world, Velocity, eid);
 
     Position.x[eid] = x;
     Position.y[eid] = y;
-    
+
     Renderable.shape[eid] = RenderableShape[renderableName];
 
     x += xStep;
@@ -49,9 +53,9 @@ async function main() {
 
   //addComponent(world, CameraFocus, lastEid);
 
-  const pane = setupTwiddles(world, viewport);
+  const { pane, paneUpdateSystem } = setupTwiddles(world, viewport);
 
-  const focusSelectionSystem = defineSystem((world) => {
+  const focusSelectionSystem = (world) => {
     const clickedEid = renderQuery(world).find(
       (eid) => Renderable.mouseClicked[eid]
     );
@@ -62,13 +66,11 @@ async function main() {
       }
       addComponent(world, CameraFocus, clickedEid);
     }
-  });
 
-  const pipeline = pipe(
-    movementSystem,
-    focusSelectionSystem,
-    () => pane.refresh()
-  );
+    return world;
+  };
+
+  const pipeline = pipe(movementSystem, focusSelectionSystem, paneUpdateSystem);
   world.run(pipeline, viewport, stats);
 
   console.log("READY.");

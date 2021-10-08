@@ -1,10 +1,4 @@
-import {
-  defineSystem,
-  addComponent,
-  pipe,
-  removeComponent,
-  hasComponent,
-} from "bitecs";
+import { addComponent, pipe, removeComponent, hasComponent } from "bitecs";
 import * as Stats from "../../lib/stats.js";
 import * as World from "../../lib/world.js";
 import * as Viewport from "../../lib/viewport/pixi.js";
@@ -102,7 +96,7 @@ async function main() {
 
   addComponent(world, CameraFocus, world.nodeIdToEntityId[gateway.id]);
 
-  const focusSelectionSystem = defineSystem((world) => {
+  const focusSelectionSystem = (world) => {
     const renderables = renderQuery(world);
     const clickedEid = renderables.find((eid) => Renderable.mouseClicked[eid]);
     if (clickedEid) {
@@ -126,9 +120,11 @@ async function main() {
         }
       }
     }
-  });
 
-  const pane = setupTwiddles(world, viewport);
+    return world;
+  };
+
+  const { pane, paneUpdateSystem } = setupTwiddles(world, viewport);
   // setupBloomTwiddles(pane, viewport);
   //pane.addButton({ title: "Spawn" }).on("click", spawnNewNode);
 
@@ -137,7 +133,7 @@ async function main() {
     graphLayoutSystem,
     movementSystem,
     focusSelectionSystem,
-    () => pane.refresh()
+    paneUpdateSystem
   );
   world.run(pipeline, viewport, stats);
 

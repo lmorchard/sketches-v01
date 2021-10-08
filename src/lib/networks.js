@@ -1,7 +1,6 @@
 import {
   defineComponent,
   defineQuery,
-  defineSystem,
   Types,
   addComponent,
   removeComponent,
@@ -63,7 +62,7 @@ export function spawnEntitiesForNetwork(world, network) {
   return networkEid;
 }
 
-export const networkGraphLayoutSystem = defineSystem((world) => {
+export const networkGraphLayoutSystem = (world) => {
   // 0. Update node ID to EID indexes
   for (const eid of enterNetworkNodeStateQuery(world)) {
     const nodeId = NetworkNodeState.nodeId[eid];
@@ -145,7 +144,9 @@ export const networkGraphLayoutSystem = defineSystem((world) => {
       }
     }
   }
-});
+
+  return world;
+};
 
 export class Base {
   defaults() {

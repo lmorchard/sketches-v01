@@ -1,4 +1,4 @@
-import { Types, defineComponent, defineQuery, defineSystem } from "bitecs";
+import { Types, defineComponent, defineQuery } from "bitecs";
 
 export const Vector3 = { x: Types.f32, y: Types.f32, z: Types.f32 };
 
@@ -8,7 +8,7 @@ export const Velocity = defineComponent(Vector3);
 
 export const movementQuery = defineQuery([Position, Velocity]);
 
-export const movementSystem = defineSystem((world) => {
+export const movementSystem = (world) => {
   const {
     time: { deltaSec },
   } = world;
@@ -17,9 +17,10 @@ export const movementSystem = defineSystem((world) => {
     Position.y[eid] += Velocity.y[eid] * deltaSec;
     Position.z[eid] += Velocity.z[eid] * deltaSec;
   }
-});
+  return world;
+};
 
-export const bouncerSystem = defineSystem((world) => {
+export const bouncerSystem = (world) => {
   for (const eid of movementQuery(world)) {
     if (Position.x[eid] > 400 || Position.x[eid] < -400) {
       Velocity.x[eid] = 0 - Velocity.x[eid];
@@ -28,4 +29,5 @@ export const bouncerSystem = defineSystem((world) => {
       Velocity.y[eid] = 0 - Velocity.y[eid];
     }
   }
-});
+  return world;
+};

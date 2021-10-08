@@ -1,12 +1,6 @@
 import * as PIXI from "pixi.js";
 import { SmoothGraphics as Graphics } from "@pixi/graphics-smooth";
-import {
-  defineSystem,
-  addEntity,
-  addComponent,
-  pipe,
-  removeComponent,
-} from "bitecs";
+import { addEntity, addComponent, pipe, removeComponent } from "bitecs";
 import * as Stats from "../../lib/stats.js";
 import * as World from "../../lib/world.js";
 import * as Viewport from "../../lib/viewport/pixi.js";
@@ -66,8 +60,8 @@ async function main() {
     yPos += lineHeight;
   }
 
-  const pane = setupTwiddles(world, viewport);
-  const pipeline = pipe(() => pane.refresh());
+  const { paneUpdateSystem } = setupTwiddles(world, viewport);
+  const pipeline = pipe(paneUpdateSystem);
   world.run(pipeline, viewport, stats);
 
   console.log("READY.");

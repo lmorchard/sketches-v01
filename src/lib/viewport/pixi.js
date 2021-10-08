@@ -198,7 +198,7 @@ class ViewportPixi {
     renderables[eid] = g;
     stage.addChild(g);
 
-    this.drawShape(g, Renderable.shape[eid]);
+    this.drawShape(g, Renderable.shape[eid], Renderable.color[eid]);
 
     return g;
   }
@@ -322,7 +322,7 @@ class ViewportPixi {
     }
   }
 
-  drawShape(g, shape) {
+  drawShape(g, shape, color) {
     const { zoom } = this;
     const lineWidth = 2 * (1 / zoom);
 
@@ -493,6 +493,15 @@ class ViewportPixi {
         g.lineTo(P[8], P[8]);
         g.moveTo(P[0], P[8]);
         g.lineTo(P[8], P[5]);
+        break;
+      }
+      case RenderableShape.Ball: {
+        g.lineStyle(lineWidth, color || 0xff8888, 1);
+        g.drawCircle(0, 0, 50);
+        g.moveTo(0, -12.5);
+        g.lineTo(0, 12.5);
+        g.moveTo(-12.5, 0);
+        g.lineTo(12.5, 0);
         break;
       }
       default: {

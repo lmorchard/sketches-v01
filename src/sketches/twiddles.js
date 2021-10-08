@@ -22,7 +22,13 @@ export function setupTwiddles(world, viewport) {
   f1.addButton({ title: "Stop" }).on("click", () => world.loop.stop());
   f1.addButton({ title: "Start" }).on("click", () => world.loop.start());
 
-  return pane;
+  return {
+    pane,
+    paneUpdateSystem: (world) => {
+      pane.refresh();
+      return world;
+    },
+  };
 }
 
 export function setupBloomTwiddles(pane, viewport) {

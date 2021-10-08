@@ -2,7 +2,6 @@ import {
   Types,
   defineComponent,
   defineQuery,
-  defineSystem,
   enterQuery,
   exitQuery,
 } from "bitecs";
@@ -40,7 +39,7 @@ export const graphLayoutNodeQuery = defineQuery([GraphLayoutNode, Position]);
 export const enterGraphLayoutNodeQuery = enterQuery(graphLayoutNodeQuery);
 export const exitGraphLayoutNodeQuery = exitQuery(graphLayoutNodeQuery);
 
-export const graphLayoutSystem = defineSystem((world) => {
+export const graphLayoutSystem = (world) => {
   const {
     time: { deltaSec },
   } = world;
@@ -81,7 +80,9 @@ export const graphLayoutSystem = defineSystem((world) => {
     const ratio = GraphLayoutScene.ratio[layoutId];
     updateNodePositions(layout, graph, ratio);
   }
-});
+  
+  return world;
+};
 
 function createLayout(world, eid) {
   const graph = new Springy.Graph();
