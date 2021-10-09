@@ -205,7 +205,11 @@ class ViewportPixi {
 
   updateRenderable(eid, r) {
     if (this.shouldRedrawRenderables) {
-      this.drawShape(this.renderables[eid], Renderable.shape[eid]);
+      this.drawShape(
+        this.renderables[eid],
+        Renderable.shape[eid],
+        Renderable.color[eid]
+      );
     }
 
     r.x = Position.x[eid];

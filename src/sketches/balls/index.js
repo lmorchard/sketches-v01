@@ -37,7 +37,7 @@ async function main() {
     return eid;
   };
 
-  for (let idx = 0; idx < 200; idx++) {
+  for (let idx = 0; idx < 100; idx++) {
     spawnBall();
   }
 
