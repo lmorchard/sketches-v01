@@ -15,15 +15,15 @@ module.exports = {
         renderOptions: {
           async: true,
         },
-        // Behold my primitive static site generator shoehorned into snowpack
+        // Behold my primitive static site generator shoehorned into snowpack 
         renderData: ({ filePath }) => {
           const sketchesPath = path.join(path.dirname(filePath), "sketches");
           const sketches = glob
             .sync(`${sketchesPath}/**/index.html`)
             .map((sketchPath) => ({
               path: sketchPath.replace(`${path.dirname(filePath)}/`, ""),
-              // TODO: Maybe scrape a name & description from the HTML file
-              // TODO: Maybe use directories to come up with separate sections
+              // TODO: scrape a name & description from the HTML file
+              // TODO: use directories to come up with separate sections
               name: sketchPath
                 .replace(`${sketchesPath}/`, "")
                 .split("/")
