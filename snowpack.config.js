@@ -22,7 +22,7 @@ module.exports = {
             .sync(`${sketchesPath}/**/index.html`)
             .map((sketchPath) => ({
               path: sketchPath.replace(`${path.dirname(filePath)}/`, ""),
-              // TODO: scrape a name & description from the HTML file
+              // TODO: scrape name & description from the HTML file
               // TODO: use directories to come up with separate sections
               name: sketchPath
                 .replace(`${sketchesPath}/`, "")
