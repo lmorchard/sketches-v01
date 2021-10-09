@@ -25,6 +25,7 @@
     "dat.gui": "^0.7.7",
     "mainloop.js": "^1.0.4",
     "nodemon": "^2.0.12",
+    "p5": "^1.4.0",
     "pixi-filters": "^4.1.4",
     "pixi.js": "^6.1.2",
     "seedrandom": "^3.0.5",
