@@ -1,4 +1,4 @@
-import { g as getDefaultExportFromCjs, c as createCommonjsModule, a as commonjsGlobal, b as commonjsRequire } from './common/_commonjsHelpers-b3efd043.kgPMtYenJq3N.js';
+import { g as getDefaultExportFromCjs, c as createCommonjsModule, a as commonjsGlobal, b as commonjsRequire } from './common/_commonjsHelpers-b3efd043.js';
 
 var p5_min = createCommonjsModule(function (module, exports) {
 /*! p5.js v1.4.0 June 29, 2021 */

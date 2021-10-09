@@ -1,6 +1,6 @@
-import seedrandom from "../../vendor/pkg/seedrandom.wRoeaUOqbdm6.js";
-import { ExploitSet, VulnerabilitySet, VULNERABILITY_GRADES } from "./combat.TWio5AghT_ae.js";
-import { useRng } from "../../lib/utils.ghOH_F0dc1Cy.js";
+import seedrandom from "../../vendor/pkg/seedrandom.js";
+import { ExploitSet, VulnerabilitySet, VULNERABILITY_GRADES } from "./combat.js";
+import { useRng } from "../../lib/utils.js";
 
 export async function run() {
   useRng(seedrandom);

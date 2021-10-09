@@ -1,4 +1,4 @@
-import { c as createCommonjsModule, a as commonjsGlobal } from './common/_commonjsHelpers-b3efd043.kgPMtYenJq3N.js';
+import { c as createCommonjsModule, a as commonjsGlobal } from './common/_commonjsHelpers-b3efd043.js';
 
 var mainloop_min = createCommonjsModule(function (module) {
 /**

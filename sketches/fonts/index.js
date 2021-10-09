@@ -1,16 +1,16 @@
-import * as PIXI from "../../vendor/pkg/pixijs.JexExpKVjGwg.js";
-import { SmoothGraphics as Graphics } from "../../vendor/pkg/@pixi/graphics-smooth.dnPEsoV5beA_.js";
-import { addEntity, addComponent, pipe, removeComponent } from "../../vendor/pkg/bitecs.NAhENCKzJOVt.js";
-import * as Stats from "../../lib/stats.kmT9S2XHaHWD.js";
-import * as World from "../../lib/world.LNwdjn2kAWyp.js";
-import * as Viewport from "../../lib/viewport/pixi.h5vEDTNcChhr.js";
+import * as PIXI from "../../vendor/pkg/pixijs.js";
+import { SmoothGraphics as Graphics } from "../../vendor/pkg/@pixi/graphics-smooth.js";
+import { addEntity, addComponent, pipe, removeComponent } from "../../vendor/pkg/bitecs.js";
+import * as Stats from "../../lib/stats.js";
+import * as World from "../../lib/world.js";
+import * as Viewport from "../../lib/viewport/pixi.js";
 import {
   RenderableShape,
   RenderableShapes,
   Renderable,
-} from "../../lib/viewport/index.CpZuvs6nLZ_y.js";
-import { Position, Velocity } from "../../lib/positionMotion.l-PS2cXo6TSL.js";
-import { setupTwiddles } from "../twiddles.ik1Q5cV1Vv7g.js";
+} from "../../lib/viewport/index.js";
+import { Position, Velocity } from "../../lib/positionMotion.js";
+import { setupTwiddles } from "../twiddles.js";
 
 import FontFutural from "../../fonts/futural.json.proxy.js";
 import FontFuturam from "../../fonts/futuram.json.proxy.js";

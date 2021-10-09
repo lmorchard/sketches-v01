@@ -1,7 +1,7 @@
-import { addEntity, addComponent, pipe, removeComponent } from "../../vendor/pkg/bitecs.NAhENCKzJOVt.js";
-import * as Stats from "../../lib/stats.kmT9S2XHaHWD.js";
-import * as World from "../../lib/world.LNwdjn2kAWyp.js";
-import * as Viewport from "../../lib/viewport/pixi.h5vEDTNcChhr.js";
+import { addEntity, addComponent, pipe, removeComponent } from "../../vendor/pkg/bitecs.js";
+import * as Stats from "../../lib/stats.js";
+import * as World from "../../lib/world.js";
+import * as Viewport from "../../lib/viewport/pixi.js";
 import {
   CameraFocus,
   RenderableShape,
@@ -9,13 +9,13 @@ import {
   Renderable,
   renderQuery,
   cameraFocusQuery,
-} from "../../lib/viewport/index.CpZuvs6nLZ_y.js";
+} from "../../lib/viewport/index.js";
 import {
   movementSystem,
   Position,
   Velocity,
-} from "../../lib/positionMotion.l-PS2cXo6TSL.js";
-import { setupTwiddles } from "../twiddles.ik1Q5cV1Vv7g.js";
+} from "../../lib/positionMotion.js";
+import { setupTwiddles } from "../twiddles.js";
 
 async function main() {
   const stats = Stats.init();

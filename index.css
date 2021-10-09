@@ -9,10 +9,10 @@ body {
   overflow: hidden;
 }
 a {
-  color: #33f;
+  color: rgb(156, 156, 247);
 }
 a:visited {
-  color: #83f;
+  color: rgb(192, 95, 230);
 }
 #main {
   position: absolute;

@@ -1,4 +1,4 @@
-import { c as createCommonjsModule } from './_commonjsHelpers-b3efd043.kgPMtYenJq3N.js';
+import { c as createCommonjsModule } from './_commonjsHelpers-b3efd043.js';
 
 /*!
  * @pixi/math - v6.1.3

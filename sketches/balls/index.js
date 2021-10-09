@@ -1,16 +1,16 @@
-import { addEntity, addComponent, pipe } from "../../vendor/pkg/bitecs.NAhENCKzJOVt.js";
-import { rngIntRange } from "../../lib/randoms.Tx30J0bbJd9y.js";
-import * as Stats from "../../lib/stats.kmT9S2XHaHWD.js";
-import * as World from "../../lib/world.LNwdjn2kAWyp.js";
-import * as Viewport from "../../lib/viewport/pixi.h5vEDTNcChhr.js";
-import { Renderable, RenderableShape } from "../../lib/viewport/index.CpZuvs6nLZ_y.js";
+import { addEntity, addComponent, pipe } from "../../vendor/pkg/bitecs.js";
+import { rngIntRange } from "../../lib/randoms.js";
+import * as Stats from "../../lib/stats.js";
+import * as World from "../../lib/world.js";
+import * as Viewport from "../../lib/viewport/pixi.js";
+import { Renderable, RenderableShape } from "../../lib/viewport/index.js";
 import {
   Position,
   Velocity,
   movementSystem,
   bouncerSystem,
-} from "../../lib/positionMotion.l-PS2cXo6TSL.js";
-import { setupTwiddles } from "../twiddles.ik1Q5cV1Vv7g.js";
+} from "../../lib/positionMotion.js";
+import { setupTwiddles } from "../twiddles.js";
 
 async function main() {
   const stats = Stats.init();

@@ -1,4 +1,4 @@
-import { mkrng, genName } from "../../lib/utils.ghOH_F0dc1Cy.js";
+import { mkrng, genName } from "../../lib/utils.js";
 
 export const EXPLOIT_RARITIES = {
   common: 11 / 15,

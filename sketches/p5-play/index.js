@@ -1,5 +1,5 @@
-import p5 from "../../vendor/pkg/p5.vMVpa_2JDAwr.js";
-import * as utils from "../p5-utils.zbWJP52j2A4c.js";
+import p5 from "../../vendor/pkg/p5.js";
+import * as utils from "../p5-utils.js";
 let canvas;
 
 function setup() {  

@@ -1,4 +1,4 @@
-import { Pane } from "../vendor/pkg/tweakpane.8pTCCtd4Og9S.js";
+import { Pane } from "../vendor/pkg/tweakpane.js";
 
 export function setupTwiddles(world, viewport) {
   const pane = new Pane();
