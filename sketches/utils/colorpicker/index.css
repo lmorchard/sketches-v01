@@ -1,0 +1,81 @@
+body {
+  color: #fff;
+  background: #171F30;
+  line-height: 150%;
+}
+
+.wrap {
+  min-height: 100vh;
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.wrap .half {
+  width: 50%;
+  padding: 32px 0;
+}
+
+.title {
+  font-family: sans-serif;
+  line-height: 24px;
+  display: block;
+  padding: 8px 0;
+}
+
+.swatch {
+  height: 32px;
+  margin: 4px 0;
+  border-radius: 4px;
+}
+
+#colorList {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction:column;
+}
+#colorList .swatch, #activeColor .swatch {
+  border-radius: 0;
+}
+#colorList .value, #activeColor .value {
+  padding: 0 1em;
+  font-family: monospace;
+}
+#colorList li {
+  flex: 1;
+  white-space: nowrap;
+}
+#colorList li:first-child .swatch {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+#colorList li:last-child .swatch {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+#activeColor .swatch {
+  width: 120px;
+}
+
+.readout {
+  margin-top: 32px;
+  line-height: 180%;
+}
+
+#values {
+  font-family: monospace;
+  line-height: 150%;
+}
+
+.link {
+  margin-top: 16px;
+}
+.link a {
+  color: MediumSlateBlue;
+}

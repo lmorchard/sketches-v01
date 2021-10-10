@@ -1,5 +1,6 @@
 {
   "imports": {
+    "@jaames/iro": "./@jaames/iro.js",
     "@pixi/graphics-smooth": "./@pixi/graphics-smooth.js",
     "bitecs": "./bitecs.js",
     "mainloop.js": "./mainloopjs.js",
