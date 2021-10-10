@@ -35,6 +35,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "@jaames/iro": "^5.5.2",
     "@snowpack/plugin-run-script": "^2.3.0",
     "glob": "^7.2.0",
     "http-server": "^13.0.0",
