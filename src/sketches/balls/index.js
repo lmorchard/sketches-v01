@@ -25,17 +25,25 @@ async function main() {
     Renderable.color[eid] = Math.floor(0xffffff * Math.random());
 
     addComponent(world, Position, eid);
-    Position.x[eid] = rngIntRange(-300, 300);
-    Position.y[eid] = rngIntRange(-300, 300);
-    Position.z[eid] = rngIntRange(1, 6);
+    Position.x[eid] = rngIntRange(-400, 400);
+    Position.y[eid] = rngIntRange(-400, 400);
+    Position.z[eid] = rngIntRange(0, 400);
+    Position.r[eid] = rngIntRange(1, 6);
 
     addComponent(world, Velocity, eid);
     Velocity.x[eid] = rngIntRange(-100, 100);
     Velocity.y[eid] = rngIntRange(-100, 100);
-    Velocity.z[eid] = rngIntRange(-12, 12);
+    Velocity.z[eid] = rngIntRange(-100, 100);
+    Velocity.r[eid] = rngIntRange(-12, 12);
 
     return eid;
   };
+
+  const centerBall = spawnBall();
+  Position.x[centerBall] = 0;
+  Position.y[centerBall] = 0;
+  Position.z[centerBall] = 0;
+  Position.r[centerBall] = 0;
 
   for (let idx = 0; idx < 100; idx++) {
     spawnBall();

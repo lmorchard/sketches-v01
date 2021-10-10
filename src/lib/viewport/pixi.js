@@ -76,13 +76,13 @@ class ViewportPixi {
         active: false,
       },
       zoom: 1.0,
-      zoomLast: 1.0,
-      shouldRedrawRenderables: false,
       gridEnabled: true,
+      gridZ: 500,
       gridSize: 100,
       gridLineWidth: 2.0,
       gridLineColor: 0xffffff,
       gridLineAlpha: 0.1,
+      perspective: 500,
     });
   }
 
@@ -96,11 +96,6 @@ class ViewportPixi {
     this.drawEdges(world);
 
     const entityIds = renderQuery(world);
-
-    if (this.zoom !== this.lastZoom) {
-      // zoom change affects line width of renderables
-      this.shouldRedrawRenderables = true;
-    }
 
     for (const eid of entityIds) {
       if (!renderables[eid]) {
@@ -116,9 +111,6 @@ class ViewportPixi {
         this.destroyRenderable(eid, r);
       }
     }
-
-    this.shouldRedrawRenderables = false;
-    this.lastZoom = this.zoom;
 
     renderer.render(filterStage);
   }
@@ -198,25 +190,31 @@ class ViewportPixi {
     renderables[eid] = g;
     stage.addChild(g);
 
-    this.drawShape(g, Renderable.shape[eid], Renderable.color[eid]);
-
     return g;
   }
 
   updateRenderable(eid, r) {
-    if (this.shouldRedrawRenderables) {
-      this.drawShape(
-        this.renderables[eid],
-        Renderable.shape[eid],
-        Renderable.color[eid]
-      );
-    }
+    const { stage, zoom } = this;
 
+    const scaleProjected =
+      this.perspective / (this.perspective + Position.z[eid]);
+    const xProjected = (Position.x[eid] - this.camera.x) * scaleProjected;
+    const yProjected = (Position.y[eid] - this.camera.y) * scaleProjected;
+
+    r.rotation = Position.r[eid];
+    r.x = xProjected;
+    r.y = yProjected;
+    r.scale.x = scaleProjected;
+    r.scale.y = scaleProjected;
+    /*
     r.x = Position.x[eid];
     r.y = Position.y[eid];
-    r.rotation = Position.z[eid];
     r.scale.x = 1.0;
     r.scale.y = 1.0;
+    */
+
+    const lineWidth = 2 * (1 / scaleProjected) * (1 / zoom);
+    this.drawShape(r, Renderable.shape[eid], Renderable.color[eid], lineWidth);
 
     // Let the mouse stay clicked for a frame, then clear the state.
     if (Renderable.mouseClicked[eid]) {
@@ -243,8 +241,8 @@ class ViewportPixi {
       renderer.resize(clientWidth, clientHeight);
     }
 
-    let centerX = clientWidth / 2 - camera.x * zoom;
-    let centerY = clientHeight / 2 - camera.y * zoom;
+    let centerX = clientWidth / 2; // - camera.x * zoom;
+    let centerY = clientHeight / 2; // - camera.y * zoom;
 
     stage.x = centerX;
     stage.y = centerY;
@@ -267,6 +265,7 @@ class ViewportPixi {
       gridLineWidth,
       gridLineColor,
       gridLineAlpha,
+      renderer,
       bgGraphics: g,
     } = this;
 
@@ -274,10 +273,16 @@ class ViewportPixi {
       viewport: { clientWidth, clientHeight },
     } = world;
 
+    const gridProjectedScale =
+      this.perspective / (this.perspective + this.gridZ);
+
+    g.x = 0 - camera.x * gridProjectedScale;
+    g.y = 0 - camera.y * gridProjectedScale;
+
     const lineWidth = 2 * (1 / zoom);
 
-    const visibleWidth = Math.floor(clientWidth / zoom);
-    const visibleHeight = Math.floor(clientHeight / zoom);
+    const visibleWidth = Math.floor(clientWidth / zoom) / gridProjectedScale;
+    const visibleHeight = Math.floor(clientHeight / zoom) / gridProjectedScale;
     const visibleLeft = 0 - visibleWidth / 2 + camera.x;
     const visibleTop = 0 - visibleHeight / 2 + camera.y;
 
@@ -301,7 +306,7 @@ class ViewportPixi {
   }
 
   drawEdges(world) {
-    const { edgeGraphics: g, zoom } = this;
+    const { edgeGraphics: g, zoom, camera } = this;
 
     const lineWidth = 2 * (1 / zoom);
 
@@ -320,16 +325,16 @@ class ViewportPixi {
         if (seen.has(seenKey)) continue;
         seen.add(seenKey);
 
-        g.moveTo(Position.x[fromEid], Position.y[fromEid]);
-        g.lineTo(Position.x[toEid], Position.y[toEid]);
+        g.moveTo(
+          Position.x[fromEid] - camera.x,
+          Position.y[fromEid] - camera.y
+        );
+        g.lineTo(Position.x[toEid] - camera.x, Position.y[toEid] - camera.y);
       }
     }
   }
 
-  drawShape(g, shape, color) {
-    const { zoom } = this;
-    const lineWidth = 2 * (1 / zoom);
-
+  drawShape(g, shape, color, lineWidth) {
     const P = [];
     for (let p = -50; p <= 50; p += 50 / 4) {
       P.push(p);
