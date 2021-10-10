@@ -27,12 +27,12 @@ async function main() {
     addComponent(world, Position, eid);
     Position.x[eid] = rngIntRange(-300, 300);
     Position.y[eid] = rngIntRange(-300, 300);
-    Position.z[eid] = rngIntRange(1, 6);
+    Position.r[eid] = rngIntRange(1, 6);
 
     addComponent(world, Velocity, eid);
     Velocity.x[eid] = rngIntRange(-100, 100);
     Velocity.y[eid] = rngIntRange(-100, 100);
-    Velocity.z[eid] = rngIntRange(-12, 12);
+    Velocity.r[eid] = rngIntRange(-12, 12);
 
     return eid;
   };
