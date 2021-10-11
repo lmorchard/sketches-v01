@@ -6,23 +6,13 @@ import {
   defineComponent,
   Types,
 } from "bitecs";
-import { hslToRgb } from "../../../../../lib/hslToRgb.js";
-import { lerp } from "../../../../../lib/transitions.js";
-import easings from "../../../../../lib/easings.js";
-import { rngIntRange } from "../../../../../lib/randoms.js";
-import * as Stats from "../../../../../lib/stats.js";
-import * as World from "../../../../../lib/world.js";
-import * as Viewport from "../../../../../lib/viewport/pixi.js";
-import {
-  Renderable,
-  RenderableShape,
-} from "../../../../../lib/viewport/index.js";
-import {
-  Position,
-  Velocity,
-  movementSystem,
-  bouncerSystem,
-} from "../../../../../lib/positionMotion.js";
+import { hslToRgb } from "../../../../lib/hslToRgb.js";
+import { lerp } from "../../../../lib/transitions.js";
+import easings from "../../../../lib/easings.js";
+import { rngIntRange } from "../../../../lib/randoms.js";
+import * as Stats from "../../../../lib/stats.js";
+import * as World from "../../../../lib/world.js";
+import * as Viewport from "../../../../lib/viewport/pixi.js";
 import { setupTwiddles } from "../../../twiddles.js";
 import { SmoothGraphics as Graphics } from "@pixi/graphics-smooth";
 

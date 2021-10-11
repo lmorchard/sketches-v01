@@ -36,7 +36,7 @@ module.exports = {
     ],
     // TODO https://www.npmjs.com/package/snowpack-plugin-assets
     // ["snowpack-plugin-assets", { assets: { from: [], to: "" } }],
-    ["snowpack-plugin-hash"],
+    // ["snowpack-plugin-hash"],
   ],
   packageOptions: {
     polyfillNode: true,
