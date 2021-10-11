@@ -1,8 +1,8 @@
 import { Pane } from "../vendor/pkg/tweakpane.js";
 
-export function setupTwiddles(world, viewport) {
+export function setupTwiddles(world, viewport, expanded = false) {
   const pane = new Pane();
-  const f1 = pane.addFolder({ title: "Twiddles", expanded: false });
+  const f1 = pane.addFolder({ title: "Twiddles", expanded });
   f1.addMonitor(world, "fps" /*, { view: "graph", min: 0, max: 75 }*/);
 
   f1.addInput(viewport, "zoom", { min: 0.1, max: 3.0 });
