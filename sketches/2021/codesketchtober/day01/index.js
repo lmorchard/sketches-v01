@@ -30,8 +30,9 @@ async function main() {
   const stats = Stats.init();
   const world = World.init();
   const viewport = Viewport.init();
+  viewport.gridEnabled = false;
 
-  const { pane, paneUpdateSystem } = setupTwiddles(world, viewport, true);
+  const { pane, paneUpdateSystem } = setupTwiddles(world, viewport, false);
 
   const g = (world.gRaster = new Graphics());
   viewport.stage.addChild(g);
@@ -145,7 +146,7 @@ const skySystem = (viewport) => (world) => {
   const xRight = viewport.renderer.width / 2;
   const xLeft = 0 - xRight;
 
-  for (let y = yStart; y > yEnd; y -= 1) {
+  for (let y = yStart; y > yEnd; y -= 2) {
     const perc = (y - yStart) / (yEnd - yStart);
 
     const easing = easings.easeOutExpo; //(x) => x;
@@ -178,7 +179,6 @@ const spawnRaster = (world, yInit) => {
   addComponent(world, MovingRaster, eid);
   const { y, from, to, velocity, color } = MovingRaster;
 
-  //color[eid] = Math.floor(0xFFFFFF * Math.random());
   color[eid] = hslToRgb(Math.random(), 0.5, 0.5);
   y[eid] = yInit;
 
