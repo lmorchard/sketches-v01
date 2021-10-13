@@ -27,10 +27,11 @@ async function main() {
   const g = (world.gRaster = new Graphics());
   viewport.stage.addChild(g);
 
-  const cycleEid = spawnDayNightCycle(world);
-  pane.addMonitor(DayNightCycle.currentTime, cycleEid, {
-    label: "currentTime",
-  });
+  const cycle = DayNightCycleProxy.spawn(world);
+  pane.addMonitor(cycle, "currentTime");
+  pane.addMonitor(cycle, "dayPeriodName");
+  pane.addMonitor(cycle, "dayPeriodProgress");
+  pane.addMonitor(cycle, "dayPeriodNextName");
 
   const pipeline = pipe(
     dayNightCycleSystem,
@@ -51,7 +52,6 @@ const roadSystem = (viewport) => (world) => {
   if (!world.gRoad) {
     world.gRoad = new Graphics();
     viewport.stage.addChild(world.gRoad);
-    console.log(viewport.renderer.height / 2);
   }
 
   const { gRoad: g } = world;
@@ -96,29 +96,6 @@ const roadSystem = (viewport) => (world) => {
   return world;
 };
 
-const SKY_COLORS = {
-  sunrise: [
-    [36 / 360, 0.9, 0.6],
-    [201 / 360, 0.1, 0.1],
-  ],
-  day: [
-    [193 / 360, 0.74, 0.59],
-    [215 / 360, 0.89, 0.44],
-  ],
-  sunset: [
-    [32 / 360, 1.0, 0.5],
-    [235 / 360, 0.28, 0.57],
-  ],
-  evening: [
-    [265 / 360, 0.8, 0.3],
-    [201 / 360, 0.5, 0.2],
-  ],
-  night: [
-    [201 / 360, 0.1, 0.1],
-    [1 / 360, 0.1, 0.1],
-  ],
-};
-
 const skySystem = (viewport) => (world) => {
   if (!world.gSky) {
     world.gSky = new Graphics();
@@ -127,65 +104,12 @@ const skySystem = (viewport) => (world) => {
 
   const { gSky: g } = world;
 
-  const cEid = dayNightCycleQuery(world)[0];
-  const {
-    secondsPerSecond,
-    sunriseTime,
-    noonTime,
-    sunsetTime,
-    nightTime,
-    currentTime,
-    eveningTime,
-    isDay,
-  } = DayNightCycle;
+  const eid = dayNightCycleQuery(world)[0];
+  const cycle = new DayNightCycleProxy(eid);
 
-  // TODO: condense this down into a simpler abstract algo?
-  let periodStartColor, periodEndColor, periodProgress;
-  if (
-    currentTime[cEid] >= sunriseTime[cEid] &&
-    currentTime[cEid] < noonTime[cEid]
-  ) {
-    periodStartColor = SKY_COLORS.sunrise;
-    periodEndColor = SKY_COLORS.day;
-    periodProgress =
-      (currentTime[cEid] - sunriseTime[cEid]) /
-      (noonTime[cEid] - sunriseTime[cEid]);
-  } else if (
-    currentTime[cEid] >= noonTime[cEid] &&
-    currentTime[cEid] < sunsetTime[cEid]
-  ) {
-    periodStartColor = SKY_COLORS.day;
-    periodEndColor = SKY_COLORS.sunset;
-    periodProgress =
-      (currentTime[cEid] - noonTime[cEid]) /
-      (sunsetTime[cEid] - noonTime[cEid]);
-  } else if (
-    currentTime[cEid] >= sunsetTime[cEid] &&
-    currentTime[cEid] < eveningTime[cEid]
-  ) {
-    periodStartColor = SKY_COLORS.sunset;
-    periodEndColor = SKY_COLORS.evening;
-    periodProgress =
-      (currentTime[cEid] - sunsetTime[cEid]) /
-      (eveningTime[cEid] - sunsetTime[cEid]);
-  } else if (
-    currentTime[cEid] >= eveningTime[cEid] &&
-    currentTime[cEid] < nightTime[cEid]
-  ) {
-    periodStartColor = SKY_COLORS.evening;
-    periodEndColor = SKY_COLORS.night;
-    periodProgress =
-      (currentTime[cEid] - eveningTime[cEid]) /
-      (nightTime[cEid] - eveningTime[cEid]);
-  } else if (currentTime[cEid] >= nightTime[cEid]) {
-    periodStartColor = SKY_COLORS.night;
-    periodEndColor = SKY_COLORS.night;
-    periodProgress = 1.0;
-  } else if (currentTime[cEid] <= sunriseTime[cEid]) {
-    periodStartColor = SKY_COLORS.night;
-    periodEndColor = SKY_COLORS.sunrise;
-    periodProgress = currentTime[cEid] / sunriseTime[cEid];
-  }
+  const periodStartColor = skySystem.colors[cycle.dayPeriodName];
+  const periodEndColor = skySystem.colors[cycle.dayPeriodNextName];
+  const periodProgress = cycle.dayPeriodProgress;
 
   const [[pshH, pshS, pshL], [pszH, pszS, pszL]] = periodStartColor;
   const [[pehH, pehS, pehL], [pezH, pezS, pezL]] = periodEndColor;
@@ -225,58 +149,127 @@ const skySystem = (viewport) => (world) => {
   return world;
 };
 
-const DayNightCycle = defineComponent({
-  secondsPerSecond: Types.f32,
-  currentTime: Types.f32,
-  sunriseTime: Types.f32,
-  noonTime: Types.f32,
-  sunsetTime: Types.f32,
-  eveningTime: Types.f32,
-  nightTime: Types.f32,
-  isDay: Types.ui8,
-});
-
-const dayNightCycleQuery = defineQuery([DayNightCycle]);
-
-const dayNightCycleDefaults = {
-  secondsPerSecond: 1440,
-  currentTime: 12 * 60 * 60,
-  sunriseTime: 6.5 * 60 * 60,
-  noonTime: 12 * 60 * 60,
-  sunsetTime: 16 * 60 * 60,
-  eveningTime: 16.5 * 60 * 60,
-  nightTime: 24 * 60 * 60,
+skySystem.colors = {
+  night: [
+    [201 / 360, 0.1, 0.1],
+    [1 / 360, 0.1, 0.1],
+  ],
+  sunrise: [
+    [36 / 360, 0.9, 0.6],
+    [201 / 360, 0.1, 0.1],
+  ],
+  noon: [
+    [193 / 360, 0.74, 0.59],
+    [215 / 360, 0.89, 0.44],
+  ],
+  sunset: [
+    [32 / 360, 1.0, 0.5],
+    [235 / 360, 0.28, 0.57],
+  ],
+  evening: [
+    [265 / 360, 0.8, 0.3],
+    [201 / 360, 0.5, 0.2],
+  ],
 };
 
-const spawnDayNightCycle = (world, props = {}) => {
-  const eid = addEntity(world);
-  addComponent(world, DayNightCycle, eid);
-  for (const [name, value] of Object.entries({
-    ...dayNightCycleDefaults,
-    ...props,
-  })) {
-    DayNightCycle[name][eid] = value;
+class BaseComponentProxy {
+  constructor(eid) {
+    this.eid = eid;
+    const defaults = this.constructor.defaults();
+    Object.keys(defaults).forEach((name) => {
+      if (this[name]) return;
+      Object.defineProperty(this, name, {
+        get: () => this.constructor.component[name][this.eid],
+        set: (value) => (this.constructor.component[name][this.eid] = value),
+      });
+    });
   }
-  return eid;
-};
+
+  static spawn(world, props = {}) {
+    const eid = addEntity(world);
+    addComponent(world, this.component, eid);
+
+    const proxy = new this(eid);
+    for (const [name, value] of Object.entries({
+      ...this.defaults(),
+      ...props,
+    })) {
+      proxy[name] = value;
+    }
+
+    return proxy;
+  }
+}
+
+class DayNightCycleProxy extends BaseComponentProxy {
+  static component = defineComponent({
+    secondsPerSecond: Types.f32,
+    currentTime: Types.f32,
+    dayPeriodIdx: Types.ui8,
+    dayPeriodProgress: Types.f32,
+    dayPeriods: [Types.f32, 6],
+  });
+  static defaults() {
+    return {
+      secondsPerSecond: 1440,
+      currentTime: 12 * 60 * 60,
+      dayPeriodIdx: 0,
+      dayPeriodProgress: 0,
+      dayPeriods: [0, 6, 12, 16, 18, 24].map((hours) => hours * 60 * 60),
+    };
+  }
+  static periodNames = [
+    "night",
+    "sunrise",
+    "noon",
+    "sunset",
+    "evening",
+    "night",
+  ];
+  set dayPeriods(val) {
+    this.constructor.component.dayPeriods[this.eid].set(val);
+  }
+  get dayPeriods() {
+    return this.constructor.component.dayPeriods[this.eid];
+  }
+  get dayPeriodName() {
+    return this.constructor.periodNames[this.dayPeriodIdx];
+  }
+  get dayPeriodNextName() {
+    return (
+      this.constructor.periodNames[this.dayPeriodIdx + 1] ||
+      this.constructor.periodNames[0]
+    );
+  }
+}
+
+const dayNightCycleQuery = defineQuery([DayNightCycleProxy.component]);
 
 const SECONDS_PER_DAY = 60 * 60 * 24;
 
 const dayNightCycleSystem = (world) => {
-  const { secondsPerSecond, sunsetTime, sunriseTime, currentTime, isDay } =
-    DayNightCycle;
   const {
     time: { deltaSec },
   } = world;
+
+  const cycle = new DayNightCycleProxy();
   for (const eid of dayNightCycleQuery(world)) {
-    currentTime[eid] += secondsPerSecond[eid] * deltaSec;
-    if (currentTime[eid] > SECONDS_PER_DAY) {
-      currentTime[eid] = 0;
+    cycle.eid = eid;
+    cycle.currentTime += cycle.secondsPerSecond * deltaSec;
+    if (cycle.currentTime > SECONDS_PER_DAY) {
+      cycle.currentTime = 0;
     }
-    isDay[eid] =
-      currentTime[eid] > sunriseTime[eid] && currentTime[eid] < sunsetTime[eid]
-        ? 1
-        : 0;
+    for (let idx = cycle.dayPeriods.length - 1; idx >= 0; idx--) {
+      if (cycle.currentTime >= cycle.dayPeriods[idx]) {
+        cycle.dayPeriodIdx = idx;
+        break;
+      }
+    }
+    const startPeriod = cycle.dayPeriods[cycle.dayPeriodIdx];
+    const endPeriod =
+      cycle.dayPeriods[cycle.dayPeriodIdx + 1] || SECONDS_PER_DAY;
+    cycle.dayPeriodProgress =
+      (cycle.currentTime - startPeriod) / (endPeriod - startPeriod);
   }
   return world;
 };
