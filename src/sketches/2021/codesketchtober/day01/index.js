@@ -43,10 +43,13 @@ async function main() {
   console.log("READY.");
 }
 
-const ROAD_COLORS = {
-  grass: [70 / 360, 0.82, 0.39],
-  road: [146 / 360, 0.04, 0.32],
-};
+function lerpMany(startList, endList, perc) {
+  const out = [];
+  for (let idx = 0; idx < startList.length; idx++) {
+    out.push(lerp(startList[idx], endList[idx], perc));
+  }
+  return out;
+}
 
 const roadSystem = (viewport) => (world) => {
   if (!world.gRoad) {
@@ -68,13 +71,32 @@ const roadSystem = (viewport) => (world) => {
   for (let y = yStart; y < yEnd; y += 4) {
     const perc = (y - yStart) / (yEnd - yStart);
 
+    const eid = dayNightCycleQuery(world)[0];
+    const cycle = new DayNightCycleProxy(eid);
+
+    const [grassStartColor, roadStartColor] =
+      roadSystem.colors[cycle.dayPeriodName];
+    const [grassEndColor, roadEndColor] =
+      roadSystem.colors[cycle.dayPeriodNextName];
+
+    const grassColorHsl = lerpMany(
+      grassStartColor,
+      grassEndColor,
+      cycle.dayPeriodProgress
+    );
+    const roadColorHsl = lerpMany(
+      roadStartColor,
+      roadEndColor,
+      cycle.dayPeriodProgress
+    );
+
+    const grassColor = hslToRgb(...grassColorHsl);
+    const roadColor = hslToRgb(...roadColorHsl);
+
     const roadWidth = lerp(roadWidthFar, roadWidthNear, perc);
     const roadLeft = 0 - roadWidth * 0.75;
     const roadRight = 0 + roadWidth * 0.25;
     const roadCenter = roadLeft + roadWidth / 2;
-
-    const grassColor = hslToRgb(...ROAD_COLORS.grass);
-    const roadColor = hslToRgb(...ROAD_COLORS.road);
 
     g.lineStyle(1, grassColor, 1);
     g.moveTo(xLeft, y);
@@ -96,6 +118,29 @@ const roadSystem = (viewport) => (world) => {
   return world;
 };
 
+roadSystem.colors = {
+  night: [
+    [76 / 360, 0.48, 0.35],
+    [10 / 360, 0.06, 0.6],
+  ],
+  sunrise: [
+    [76 / 360, 0.48, 0.35],
+    [10 / 360, 0.06, 0.6],
+  ],
+  noon: [
+    [76 / 360, 0.48, 0.35],
+    [10 / 360, 0.06, 0.6],
+  ],
+  sunset: [
+    [57 / 360, 0.71, 0.05],
+    [352 / 360, 0.22, 0.07],
+  ],
+  evening: [
+    [76 / 360, 0.48, 0.35],
+    [10 / 360, 0.06, 0.6],
+  ],
+};
+
 const skySystem = (viewport) => (world) => {
   if (!world.gSky) {
     world.gSky = new Graphics();
@@ -107,22 +152,21 @@ const skySystem = (viewport) => (world) => {
   const eid = dayNightCycleQuery(world)[0];
   const cycle = new DayNightCycleProxy(eid);
 
-  const periodStartColor = skySystem.colors[cycle.dayPeriodName];
-  const periodEndColor = skySystem.colors[cycle.dayPeriodNextName];
-  const periodProgress = cycle.dayPeriodProgress;
+  const [horizonStartColor, zenithStartColor] =
+    skySystem.colors[cycle.dayPeriodName];
+  const [horizonEndColor, zenithEndColor] =
+    skySystem.colors[cycle.dayPeriodNextName];
 
-  const [[pshH, pshS, pshL], [pszH, pszS, pszL]] = periodStartColor;
-  const [[pehH, pehS, pehL], [pezH, pezS, pezL]] = periodEndColor;
-  const [horizonH, horizonS, horizonL] = [
-    lerp(pshH, pehH, periodProgress),
-    lerp(pshS, pehS, periodProgress),
-    lerp(pshL, pehL, periodProgress),
-  ];
-  const [zenithH, zenithS, zenithL] = [
-    lerp(pszH, pezH, periodProgress),
-    lerp(pszS, pezS, periodProgress),
-    lerp(pszL, pezL, periodProgress),
-  ];
+  const horizonColor = lerpMany(
+    horizonStartColor,
+    horizonEndColor,
+    cycle.dayPeriodProgress
+  );
+  const zenithColor = lerpMany(
+    zenithStartColor,
+    zenithEndColor,
+    cycle.dayPeriodProgress
+  );
 
   g.clear();
 
@@ -135,11 +179,9 @@ const skySystem = (viewport) => (world) => {
     const perc = (y - yStart) / (yEnd - yStart);
 
     const easing = (x) => x; //easings.easeOutExpo; //(x) => x;
-    const h = lerp(horizonH, zenithH, easing(perc));
-    const s = lerp(horizonS, zenithS, easing(perc));
-    const l = lerp(horizonL, zenithL, easing(perc));
-
-    const color = hslToRgb(h, s, l);
+    const color = hslToRgb(
+      ...lerpMany(horizonColor, zenithColor, easing(perc))
+    );
 
     g.lineStyle(1, color, 1);
     g.moveTo(xLeft, y);
@@ -175,8 +217,7 @@ skySystem.colors = {
 class BaseComponentProxy {
   constructor(eid) {
     this.eid = eid;
-    const defaults = this.constructor.defaults();
-    Object.keys(defaults).forEach((name) => {
+    Object.keys(this.constructor.defaults).forEach((name) => {
       if (this[name]) return;
       Object.defineProperty(this, name, {
         get: () => this.constructor.component[name][this.eid],
@@ -188,15 +229,13 @@ class BaseComponentProxy {
   static spawn(world, props = {}) {
     const eid = addEntity(world);
     addComponent(world, this.component, eid);
-
     const proxy = new this(eid);
     for (const [name, value] of Object.entries({
-      ...this.defaults(),
+      ...this.defaults,
       ...props,
     })) {
       proxy[name] = value;
     }
-
     return proxy;
   }
 }
@@ -209,15 +248,13 @@ class DayNightCycleProxy extends BaseComponentProxy {
     dayPeriodProgress: Types.f32,
     dayPeriods: [Types.f32, 6],
   });
-  static defaults() {
-    return {
-      secondsPerSecond: 1440,
-      currentTime: 12 * 60 * 60,
-      dayPeriodIdx: 0,
-      dayPeriodProgress: 0,
-      dayPeriods: [0, 6, 12, 16, 18, 24].map((hours) => hours * 60 * 60),
-    };
-  }
+  static defaults = {
+    secondsPerSecond: 1440,
+    currentTime: 12 * 60 * 60,
+    dayPeriodIdx: 0,
+    dayPeriodProgress: 0,
+    dayPeriods: [0, 6, 12, 16, 18, 24].map((hours) => hours * 60 * 60),
+  };
   static periodNames = [
     "night",
     "sunrise",
