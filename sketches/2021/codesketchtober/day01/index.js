@@ -51,6 +51,20 @@ function lerpMany(startList, endList, perc) {
   return out;
 }
 
+const RE_HSL = /(hsl)?\(?(\d+),\s+(\d+)%,\s+(\d+)%\)?/;
+function parseHSL(hslStr) {
+  const [, , ...parts] = RE_HSL.exec(hslStr);
+  const [h, s, l] = parts.map((part) => parseInt(part, 10));
+  return [h / 360, s / 100, l / 100];
+}
+
+const hsl = (strings, ...values) =>
+  parseHSL(
+    strings
+      .reduce((result, string, i) => result + string + values[i], "")
+      .trim()
+  );
+
 const roadSystem = (viewport) => (world) => {
   if (!world.gRoad) {
     world.gRoad = new Graphics();
@@ -108,8 +122,15 @@ const roadSystem = (viewport) => (world) => {
     g.lineStyle(1, grassColor, 1);
     g.lineTo(xRight, y);
 
+    g.lineStyle(1, 0xffffff, 1);
+
+    g.moveTo(roadLeft - 5, y);
+    g.lineTo(roadLeft, y);
+
+    g.moveTo(roadRight + 5, y);
+    g.lineTo(roadRight, y);
+
     if ((y / 10) % 2) {
-      g.lineStyle(1, 0xffffff, 1);
       g.moveTo(roadCenter - 5, y);
       g.lineTo(roadCenter + 5, y);
     }
@@ -119,26 +140,11 @@ const roadSystem = (viewport) => (world) => {
 };
 
 roadSystem.colors = {
-  night: [
-    [76 / 360, 0.48, 0.35],
-    [10 / 360, 0.06, 0.6],
-  ],
-  sunrise: [
-    [76 / 360, 0.48, 0.35],
-    [10 / 360, 0.06, 0.6],
-  ],
-  noon: [
-    [76 / 360, 0.48, 0.35],
-    [10 / 360, 0.06, 0.6],
-  ],
-  sunset: [
-    [57 / 360, 0.71, 0.05],
-    [352 / 360, 0.22, 0.07],
-  ],
-  evening: [
-    [76 / 360, 0.48, 0.35],
-    [10 / 360, 0.06, 0.6],
-  ],
+  night: [hsl`hsl(150, 12%, 3%)`, hsl`hsl(228, 16%, 6%)`],
+  sunrise: [hsl`hsl(32, 82%, 58%)`, hsl`hsl(21, 32%, 24%)`],
+  noon: [hsl`72, 76%, 31%`, hsl`35, 10%, 62%`],
+  sunset: [hsl`hsl(95, 86%, 3%)`, hsl`hsl(344, 33%, 15%)`],
+  evening: [hsl`hsl(207, 66%, 9%)`, hsl`hsl(208, 64%, 9%)`],
 };
 
 const skySystem = (viewport) => (world) => {
