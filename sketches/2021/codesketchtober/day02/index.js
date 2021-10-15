@@ -1,5 +1,6 @@
 import {
   addEntity,
+  removeEntity,
   addComponent,
   pipe,
   defineQuery,
@@ -35,23 +36,18 @@ async function main() {
   const { pane, paneUpdateSystem } = setupTwiddles(world, viewport, false);
   const pipeline = pipe(
     movementSystem,
-    perspectiveRenderingSystem({ viewport }),
+    respawnBuildingSystem,
+    perspectiveRenderingSystem({ viewport, perspective: 250 }),
     paneUpdateSystem
   );
   world.run(pipeline, viewport, stats);
 
-  const entities = [];
-  for (let idx = 0; idx < 10; idx++) {
-    const entity = BuildingEntity.spawn(world, {
-      Position: { x: Math.random() * 1000 - 500, y: 200, z: 1000 },
-      Velocity: { x: 0, y: 0, z: Math.random() * -200 },
-    });
-    entities.push(entity);
+  for (let idx = 0; idx < 200; idx++) {
+    spawnRandomBuilding(world);
   }
 
   Object.assign(window, {
     world,
-    entities,
     Position,
     Velocity,
     PerspectiveRenderable,
@@ -60,23 +56,48 @@ async function main() {
   console.log("READY.");
 }
 
+function spawnRandomBuilding(world) {
+  return BuildingEntity.spawn(world, {
+    Position: { x: Math.random() * 4000 - 2000, y: 300, z: 1000 },
+    Velocity: { x: 0, y: 0, z: Math.random() * -1200 },
+  });
+}
+
 const PerspectiveRenderable = defineComponent({
   visible: Types.i8,
   shape: Types.i8,
   color: Types.ui32,
 });
 
+const Building = defineComponent({});
+
 class PerspectiveRenderableProxy extends BaseComponentProxy {
   static component = PerspectiveRenderable;
 }
+
+const respawnBuildingQuery = defineQuery([
+  Building,
+  Position,
+]);
+
+const respawnBuildingSystem = (world) => {
+  const position = new PositionProxy();
+  for (const eid of respawnBuildingQuery(world)) {
+    position.eid = eid;
+    if (position.z > -500) continue;
+    removeEntity(world, eid);
+    spawnRandomBuilding(world);
+  }
+  return world;
+};
+
+const camera = { x: 0, y: 0 };
 
 const perspectiveRenderableQuery = defineQuery([
   PerspectiveRenderable,
   Position,
   Velocity,
 ]);
-
-const camera = { x: 0, y: 0 };
 
 const perspectiveRenderingSystem =
   ({ viewport, perspective = 500 } = {}) =>
@@ -102,7 +123,6 @@ const perspectiveRenderingSystem =
       const x = (position.x - camera.x) * scaleProjected;
       const y = (position.y - camera.y) * scaleProjected;
   
-      //g.moveTo(position.x, position.y);
       g.drawCircle(x, y, 50 * scaleProjected);
     }
 
@@ -122,6 +142,7 @@ class BuildingEntity extends BaseEntityProxy {
     Position,
     Velocity,
     PerspectiveRenderable,
+    Building,
   };
   static defaults = {
     Position: { x: 0, y: 0, z: 0, r: 0 },

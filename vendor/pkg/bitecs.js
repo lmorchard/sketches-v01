@@ -601,4 +601,4 @@ var pipe = (...fns) => (input) => {
 };
 var Types = TYPES_ENUM;
 
-export { Types, addComponent, addEntity, createWorld, defineComponent, defineQuery, enterQuery, exitQuery, hasComponent, pipe, removeComponent };
+export { Types, addComponent, addEntity, createWorld, defineComponent, defineQuery, enterQuery, exitQuery, hasComponent, pipe, removeComponent, removeEntity };
