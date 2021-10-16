@@ -80,13 +80,13 @@ function setupTwiddles(renderingOptions, world, viewport, expanded) {
   pane.addInput(renderingOptions.camera.sway, "enabled", { label: "drunkPilot" });
   pane.addInput(renderingOptions, "fov", { min: 60, max: 150 });
   pane.addInput(renderingOptions, "horizonZ", { min: 0, max: 120000 });
-  pane.addInput(renderingOptions, "camera", {
-    x: { min: -5000, max: 5000 },
-    y: { min: -5000, max: 5000 },
-  });
   pane.addInput(renderingOptions.camera, "roll", {
-    min: -1.0,
-    max: 1.0,
+    min: -1.5,
+    max: 1.5,
+  });
+  pane.addInput(renderingOptions, "camera", {
+    x: { min: -8000, max: 8000 },
+    y: { min: -8000, max: 4000 },
   });
   return { pane, paneUpdateSystem };
 }
@@ -106,9 +106,6 @@ const cameraSwaySystem =
     const { sway } = camera;
 
     if (!sway.enabled) {
-      camera.roll = 0;
-      camera.x = 0;
-      camera.y = 0;
       return world;
     }
 
