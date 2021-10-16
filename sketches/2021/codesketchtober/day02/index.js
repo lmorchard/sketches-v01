@@ -80,6 +80,10 @@ function setupTwiddles(renderingOptions, world, viewport, expanded) {
     x: { min: -5000, max: 5000 },
     y: { min: -5000, max: 5000 },
   });
+  pane.addInput(renderingOptions.camera, "roll", {
+    min: -1.0,
+    max: 1.0,
+  });
 
   const swayFolder = pane.addFolder({ title: "Camera Sway", expanded: false });
 
@@ -116,8 +120,11 @@ const cameraSwaySystem =
   (world) => {
     const {
       camera,
-      magnitudeX = 5000,
-      magnitudeY = 2000,
+      magnitudeX = 12000,
+      magnitudeY = 4000,
+      rollFactor = 500,
+      maxRoll = 0.2,
+      minRoll = -0.2,
       speed = 0.5,
     } = options;
     const { sway } = camera;
@@ -127,8 +134,8 @@ const cameraSwaySystem =
     } = world;
 
     if (sway.direction === 0) {
-      sway.destX = Math.random() * magnitudeX;
-      sway.destY = Math.random() * magnitudeY;
+      sway.destX = magnitudeX / 2 - Math.random() * magnitudeX;
+      sway.destY = magnitudeY / 2 - Math.random() * magnitudeY;
       sway.direction = 1;
       sway.progress = 0;
     }
@@ -146,7 +153,13 @@ const cameraSwaySystem =
 
     if (sway.direction !== 0) {
       const easing = easings.easeInOutSine;
-      camera.x = sway.currX = lerp(0, sway.destX, easing(sway.progress));
+      sway.currX = lerp(0, sway.destX, easing(sway.progress));
+
+      // TODO: add roll based on direction and change in X
+      const xDiff = camera.x - sway.currX;
+      camera.roll = Math.min(maxRoll, Math.max(minRoll, xDiff / rollFactor));
+
+      camera.x = sway.currX;
       camera.y = sway.currY = lerp(0, sway.destY, easing(sway.progress));
     }
 
@@ -324,6 +337,7 @@ const perspectiveRenderingViewport = (options = {}) => ({
   draw(world) {
     const {
       viewport,
+      camera,
       horizonZ,
       horizonEasing = easings.easeOutQuart,
     } = options;
@@ -333,8 +347,23 @@ const perspectiveRenderingViewport = (options = {}) => ({
     if (!world.gPerspective) {
       world.gPerspective = new Graphics();
       stage.addChild(world.gPerspective);
+      world.gHud = new Graphics();
+      stage.addChild(world.gHud);
     }
-    const { gPerspective: g } = world;
+    const { gPerspective: g, gHud } = world;
+
+    gHud.clear();
+    gHud.lineStyle(3, 0x99ff99, 0.6);
+    gHud.moveTo(-50, -100);
+    gHud.lineTo(50, -100);
+    gHud.moveTo(-25, -50);
+    gHud.lineTo(25, -50);
+    gHud.moveTo(-100, 0);
+    gHud.lineTo(100, 0);
+    gHud.moveTo(-25, 50);
+    gHud.lineTo(25, 50);
+    gHud.moveTo(-50, 100);
+    gHud.lineTo(50, 100);
 
     const renderable = new PerspectiveRenderableProxy();
     const position = new PositionProxy();
@@ -348,7 +377,8 @@ const perspectiveRenderingViewport = (options = {}) => ({
       return position2.z - position.z;
     });
 
-    g.clear();
+    g.clear();    
+    g.rotation = camera.roll;
 
     for (const eid of renderableEids) {
       position.eid = renderable.eid = eid;
