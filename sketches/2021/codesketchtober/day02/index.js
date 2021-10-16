@@ -73,7 +73,7 @@ function spawnRandomBuilding(world) {
   return BuildingEntity.spawn(world, {
     Position: randomBuildingPosition(),
     Velocity: { x: 0, y: 0, z: -10000 },
-    Building: { width, height, },
+    Building: { width, height },
   });
 }
 
@@ -133,25 +133,25 @@ const perspectiveRenderingSystem =
       renderer: { width, height },
     } = viewport;
 
-    const tan = Math.tan((fov / 2) * RAD_PER_DEGREE);
-    const cameraPlaneZ = width / tan;
-
     const renderable = new PerspectiveRenderableProxy();
     const position = new PositionProxy();
     const position2 = new PositionProxy();
     const velocity = new VelocityProxy();
     const building = new BuildingProxy();
-
     const entity = new BuildingEntity();
 
     g.clear();
 
+    // Depth-sort the renderable entities
     const renderableEids = perspectiveRenderableQuery(world);
     renderableEids.sort((aEid, bEid) => {
       position.eid = aEid;
       position2.eid = bEid;
       return position2.z - position.z;
     });
+
+    const tan = Math.tan((fov / 2) * RAD_PER_DEGREE);
+    const cameraPlaneZ = width / 2 / tan;
 
     for (const eid of renderableEids) {
       entity.eid = eid;
@@ -203,19 +203,5 @@ class BuildingEntity extends BaseEntityProxy {
     PerspectiveRenderable: { visible: true, shape: null, color: 0x33ff33 },
   };
 }
-
-const RE_HSL = /(hsl)?\(?(\d+),\s+(\d+)%,\s+(\d+)%\)?/;
-function parseHSL(hslStr) {
-  const [, , ...parts] = RE_HSL.exec(hslStr);
-  const [h, s, l] = parts.map((part) => parseInt(part, 10));
-  return [h / 360, s / 100, l / 100];
-}
-
-const hsl = (strings, ...values) =>
-  parseHSL(
-    strings
-      .reduce((result, string, i) => result + string + values[i], "")
-      .trim()
-  );
 
 main().catch(console.error);
