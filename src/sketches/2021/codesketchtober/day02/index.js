@@ -57,21 +57,22 @@ async function main() {
 }
 
 const randomBuildingPosition = () => ({
-  x: Math.random() * 50000 - 25000,
-  y: 2000,
-  z: Math.random() * 100000,
+  //x: Math.random() * 50000 - 25000,
+  x: Math.floor(Math.random() * 50 - 25) * 1000,
+  y: 4000,
+  z: Math.floor(Math.random() * 10) * 10000,
 });
 
 function spawnRandomBuilding(world) {
   const dimensions = [
-    500 + Math.random() * 1000,
-    1000 + Math.random() * 1000,
+    500 + Math.floor(Math.random() * 250) * 10,
+    500 + Math.floor(Math.random() * 250) * 10,
   ];
-  dimensions.sort();
+  dimensions.sort((a, b) => a - b);
   const [width, height] = dimensions;
   return BuildingEntity.spawn(world, {
     Position: randomBuildingPosition(),
-    Velocity: { x: 0, y: 0, z: -5000 },
+    Velocity: { x: 0, y: 0, z: -10000 },
     Building: { width, height, },
   });
 }
