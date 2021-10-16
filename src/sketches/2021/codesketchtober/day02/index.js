@@ -28,13 +28,15 @@ async function main() {
   // TODO: move this into world?
   const renderingOptions = {
     viewport,
-    horizonZ: 90000,
+    horizonZ: 92500,
     fov: 90,
+    hud: true,
     camera: {
       x: 0,
       y: 0,
       roll: 0,
       sway: {
+        enabled: true,
         destX: 0,
         destY: 0,
         currX: 0,
@@ -74,6 +76,8 @@ async function main() {
 function setupTwiddles(renderingOptions, world, viewport, expanded) {
   const { pane, paneUpdateSystem } = baseSetupTwiddles(world, viewport, false);
 
+  pane.addInput(renderingOptions, "hud");
+  pane.addInput(renderingOptions.camera.sway, "enabled", { label: "drunkPilot" });
   pane.addInput(renderingOptions, "fov", { min: 60, max: 150 });
   pane.addInput(renderingOptions, "horizonZ", { min: 0, max: 120000 });
   pane.addInput(renderingOptions, "camera", {
@@ -84,34 +88,6 @@ function setupTwiddles(renderingOptions, world, viewport, expanded) {
     min: -1.0,
     max: 1.0,
   });
-
-  const swayFolder = pane.addFolder({ title: "Camera Sway", expanded: false });
-
-  swayFolder.addMonitor(renderingOptions.camera.sway, "destX", {
-    min: -200.0,
-    max: 200.0,
-  });
-  swayFolder.addMonitor(renderingOptions.camera.sway, "destY", {
-    min: -200.0,
-    max: 200.0,
-  });
-  swayFolder.addMonitor(renderingOptions.camera.sway, "currX", {
-    min: -200.0,
-    max: 200.0,
-  });
-  swayFolder.addMonitor(renderingOptions.camera.sway, "currY", {
-    min: -200.0,
-    max: 200.0,
-  });
-  swayFolder.addMonitor(renderingOptions.camera.sway, "progress", {
-    min: -1.0,
-    max: 1.0,
-  });
-  swayFolder.addMonitor(renderingOptions.camera.sway, "direction", {
-    min: -1.0,
-    max: 1.0,
-  });
-
   return { pane, paneUpdateSystem };
 }
 
@@ -120,14 +96,21 @@ const cameraSwaySystem =
   (world) => {
     const {
       camera,
-      magnitudeX = 12000,
-      magnitudeY = 4000,
-      rollFactor = 500,
-      maxRoll = 0.2,
-      minRoll = -0.2,
+      magnitudeX = 7000,
+      magnitudeY = 3000,
+      rollFactor = 300,
+      maxRoll = 0.15,
+      minRoll = -0.15,
       speed = 0.5,
     } = options;
     const { sway } = camera;
+
+    if (!sway.enabled) {
+      camera.roll = 0;
+      camera.x = 0;
+      camera.y = 0;
+      return world;
+    }
 
     const {
       time: { deltaSec },
@@ -337,6 +320,7 @@ const perspectiveRenderingViewport = (options = {}) => ({
   draw(world) {
     const {
       viewport,
+      hud,
       camera,
       horizonZ,
       horizonEasing = easings.easeOutQuart,
@@ -353,17 +337,19 @@ const perspectiveRenderingViewport = (options = {}) => ({
     const { gPerspective: g, gHud } = world;
 
     gHud.clear();
-    gHud.lineStyle(3, 0x99ff99, 0.6);
-    gHud.moveTo(-50, -100);
-    gHud.lineTo(50, -100);
-    gHud.moveTo(-25, -50);
-    gHud.lineTo(25, -50);
-    gHud.moveTo(-100, 0);
-    gHud.lineTo(100, 0);
-    gHud.moveTo(-25, 50);
-    gHud.lineTo(25, 50);
-    gHud.moveTo(-50, 100);
-    gHud.lineTo(50, 100);
+    if (hud) {
+      gHud.lineStyle(3, 0xaaffaa, 0.3);
+      gHud.moveTo(-50, -100);
+      gHud.lineTo(50, -100);
+      gHud.moveTo(-25, -50);
+      gHud.lineTo(25, -50);
+      gHud.moveTo(-100, 0);
+      gHud.lineTo(100, 0);
+      gHud.moveTo(-25, 50);
+      gHud.lineTo(25, 50);
+      gHud.moveTo(-50, 100);
+      gHud.lineTo(50, 100);
+    }
 
     const renderable = new PerspectiveRenderableProxy();
     const position = new PositionProxy();
@@ -377,7 +363,7 @@ const perspectiveRenderingViewport = (options = {}) => ({
       return position2.z - position.z;
     });
 
-    g.clear();    
+    g.clear();
     g.rotation = camera.roll;
 
     for (const eid of renderableEids) {
