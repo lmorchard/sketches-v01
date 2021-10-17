@@ -23,6 +23,7 @@ import { Pane } from "../../../../vendor/pkg/tweakpane.js";
 
 const LIFE_GRID_WIDTH = 50;
 const LIFE_GRID_HEIGHT = 50;
+const SPAWN_THRESHOLD = 10;
 
 async function main() {
   const world = World.init();
@@ -37,6 +38,7 @@ async function main() {
     lifeGrid.push(new Array(LIFE_GRID_HEIGHT));
   }
   world.lifeGrid = lifeGrid;
+  world.autospawnDelay = 0.0;
 
   const renderOptions = {
     camera: { x: 0, y: 0 },
@@ -47,6 +49,8 @@ async function main() {
     stepPeriod: 0.05,
     growthSpeed: 0.5,
     initialHue: 135 / 360,
+    autospawnEnabled: true,
+    autospawnPeriod: 5,
   };
 
   const { paneUpdateSystem } = setupTwiddles({
@@ -61,7 +65,7 @@ async function main() {
     pipe(autoSizedRenderer(renderOptions), lifeRenderer(renderOptions))
   );
 
-  spawnRandomCells(world, LIFE_GRID_WIDTH * 10, lifeOptions.initialHue);
+  spawnRandomCells(world, LIFE_GRID_WIDTH * 5, lifeOptions.initialHue);
 
   Object.assign(window, {
     world,
@@ -127,7 +131,8 @@ const lifeUpdateSystem =
     const {
       stepPeriod = 1.0,
       growthSpeed = 0.3,
-      initialHue = 135 / 360,
+      autospawnPeriod,
+      autospawnEnabled,
     } = options;
 
     const {
@@ -147,6 +152,15 @@ const lifeUpdateSystem =
           lifeGrid[cell.x][cell.y] = null;
           removeEntity(world, cell.eid);
         }
+      }
+    }
+
+    if (autospawnEnabled) {
+      if (world.autospawnDelay && world.autospawnDelay > 0) {
+        world.autospawnDelay -= deltaSec;
+      } else {
+        world.autospawnDelay = autospawnPeriod;        
+        spawnRandomCells(world);
       }
     }
 
@@ -383,7 +397,7 @@ const autoSizedRenderer =
 
 function setupTwiddles({
   title = "Twiddles",
-  expanded = true,
+  expanded = false,
   world,
   renderOptions,
   lifeOptions,
@@ -391,14 +405,19 @@ function setupTwiddles({
   const pane = new Pane();
 
   const f = pane.addFolder({ title, expanded });
-  f.addMonitor(world, "fps", { view: "graph", min: 0, max: 65 });
+  f.addMonitor(world, "fps"/*, { view: "graph", min: 0, max: 65 } */);
+  /*
   f.addInput(renderOptions, "zoom", { min: 0.1, max: 10.0 });
   f.addInput(renderOptions, "camera", {
     x: { min: -1000, max: 1000 },
     y: { min: -1000, max: 1000 },
   });
+  */
   f.addInput(lifeOptions, "stepPeriod", { min: 0.01, max: 3.0 });
   f.addSeparator();
+  f.addInput(lifeOptions, "autospawnEnabled");
+  f.addInput(lifeOptions, "autospawnPeriod", { min: 0.5, max: 30 });
+  f.addMonitor(world, "autospawnDelay");
   f.addButton({ title: "Spawn" }).on("click", () => spawnRandomCells(world));
   f.addSeparator();
   f.addButton({ title: "Stop" }).on("click", () => world.loop.stop());
