@@ -21,8 +21,8 @@ import { AdvancedBloomFilter, CRTFilter, RGBSplitFilter } from "../../../../vend
 
 import { Pane } from "../../../../vendor/pkg/tweakpane.js";
 
-const LIFE_GRID_WIDTH = 100;
-const LIFE_GRID_HEIGHT = 100;
+const LIFE_GRID_WIDTH = 50;
+const LIFE_GRID_HEIGHT = 50;
 
 async function main() {
   const world = World.init();
