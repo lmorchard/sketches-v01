@@ -129,160 +129,183 @@ class CellEntity extends BaseEntityProxy {
 
 const cellQuery = defineQuery([Cell]);
 
-const lifeUpdateSystem =
-  (options = {}) =>
-  (world) => {
-    const {
-      stepPeriod = 1.0,
-      growthSpeed = 0.3,
-      autospawnPeriod,
-      autospawnEnabled,
-    } = options;
+const lifeUpdateSystem = (() => {
+  // Save on garbage collection pauses by reusing these data structures
+  // This leads to some funkiness like needing to skip through arrays with
+  // an index, but performance seems better
+  const survivals = new Set();
+  const deaths = new Set();
+  const births = new Array();
+  const deadCells = new Array();
 
-    const {
-      lifeGrid,
-      time: { deltaSec },
-    } = world;
+  return (options = {}) =>
+    (world) => {
+      const {
+        stepPeriod = 1.0,
+        growthSpeed = 0.3,
+        autospawnPeriod,
+        autospawnEnabled,
+      } = options;
 
-    // Update cell "presence" to represent maturity on birth and decay on death
-    const cell = new CellProxy();
-    for (const eid of cellQuery(world)) {
-      cell.eid = eid;
-      if (cell.alive) {
-        cell.presence = Math.min(1.0, cell.presence + deltaSec * growthSpeed);
-      } else {
-        cell.presence = Math.max(0.0, cell.presence - deltaSec * growthSpeed);
-        if (cell.presence === 0.0) {
-          lifeGrid[cell.x][cell.y] = null;
-          removeEntity(world, cell.eid);
+      const {
+        lifeGrid,
+        time: { deltaSec },
+      } = world;
+
+      // Update cell "presence" to represent maturity on birth and decay on death
+      for (const eid of cellQuery(world)) {
+        const growthStep = deltaSec * growthSpeed;
+        if (Cell.alive[eid]) {
+          Cell.presence[eid] = Math.min(1.0, Cell.presence[eid] + growthStep);
+        } else {
+          Cell.presence[eid] = Math.max(0.0, Cell.presence[eid] - growthStep);
+          if (Cell.presence[eid] === 0.0) {
+            lifeGrid[Cell.x[eid]][Cell.y[eid]] = null;
+            removeEntity(world, eid);
+          }
         }
       }
-    }
 
-    if (autospawnEnabled) {
-      if (world.autospawnDelay && world.autospawnDelay > 0) {
-        world.autospawnDelay -= deltaSec;
-      } else {
-        world.autospawnDelay = autospawnPeriod;
-        spawnRandomCells(world);
+      // Automatically spawn new random live cells periodically.
+      if (autospawnEnabled) {
+        if (world.autospawnDelay && world.autospawnDelay > 0) {
+          world.autospawnDelay -= deltaSec;
+        } else {
+          world.autospawnDelay = autospawnPeriod;
+          spawnRandomCells(world);
+        }
       }
-    }
 
-    // Countdown the delay between generation updates
-    if (
-      typeof world.lifeStepDelay === "undefined" ||
-      world.lifeStepDelay <= 0.0
-    ) {
-      world.lifeStepDelay = stepPeriod;
-    } else {
-      world.lifeStepDelay -= deltaSec;
+      // Perform a delay between generation updates
+      if (
+        typeof world.lifeStepDelay === "undefined" ||
+        world.lifeStepDelay <= 0.0
+      ) {
+        world.lifeStepDelay = stepPeriod;
+      } else {
+        world.lifeStepDelay -= deltaSec;
+        return world;
+      }
+
+      births.length = 0;
+      survivals.clear();
+      deaths.clear();
+
+      let scanResult;
+      for (const eid of cellQuery(world)) {
+        // HACK: since the return result of scanNeighbors is reused, copy
+        // the result to preserve it before the inner-loop call for births.
+        scanResult = scanNeighbors(world, Cell.x[eid], Cell.y[eid]);
+        let liveNeighborCount = scanResult.liveNeighborCount;
+        deadCells.length = 0;
+        deadCells.push(...scanResult.deadCells);
+
+        if (liveNeighborCount < 2) {
+          // Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+          deaths.add(eid);
+        } else if (liveNeighborCount === 2 || liveNeighborCount === 3) {
+          // Any live cell with two or three live neighbours lives on to the next generation.
+          survivals.add(eid);
+        } else if (liveNeighborCount > 3) {
+          // Any live cell with more than three live neighbours dies, as if by overpopulation.
+          deaths.add(eid);
+        }
+
+        // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+        for (let idx = 0; idx < deadCells.length; idx += 2) {
+          const x = deadCells[idx];
+          const y = deadCells[idx + 1];
+
+          // Note: this scanNeighbors call overwrites the result from earlier.
+          scanResult = scanNeighbors(world, x, y);
+          if (scanResult.liveNeighborCount === 3) {
+            births.push(x, y, scanResult.avgHue);
+          }
+        }
+      }
+
+      // Drop presence slightly for survivors so they pulse a little.
+      for (const eid of survivals) {
+        if (Cell.presence[eid] === 1.0)
+          Cell.presence[eid] = 0.4 + Math.random() * 0.2;
+      }
+
+      // Apply deaths to cells as appropriate.
+      for (const eid of deaths) {
+        Cell.alive[eid] = false;
+      }
+
+      // Birth new live cells
+      for (let idx = 0; idx < births.length; idx += 3) {
+        const x = births[idx];
+        const y = births[idx + 1];
+        const avgHue = births[idx + 2];
+
+        if (lifeGrid[x][y]) {
+          // There's a decaying corpse here to be clobbered.
+          removeEntity(world, lifeGrid[x][y]);
+        }
+
+        // Shift the hue for the new cell slighly from average parents' hue
+        let hue = avgHue + 4 / 360;
+        if (hue >= 1.0) hue = 0.0;
+        const presence = Math.random() * 0.5;
+        const newCell = CellEntity.spawn(world, {
+          Cell: { alive: true, presence, x, y, hue },
+        });
+        lifeGrid[x][y] = newCell.eid;
+      }
+
       return world;
-    }
+    };
+})();
 
-    const survivals = new Set();
-    const deaths = new Set();
-    const births = {};
-
-    for (const eid of cellQuery(world)) {
-      cell.eid = eid;
-
-      const { liveNeighborCount, deadCells } = scanNeighbors(
-        world,
-        cell.x,
-        cell.y
-      );
-
-      if (liveNeighborCount < 2) {
-        // Any live cell with fewer than two live neighbours dies, as if by underpopulation.
-        deaths.add(eid);
-      } else if (liveNeighborCount === 2 || liveNeighborCount === 3) {
-        // Any live cell with two or three live neighbours lives on to the next generation.
-        // HACK: dim presence as a "heartbeat"
-        survivals.add(eid);
-      } else if (liveNeighborCount > 3) {
-        // Any live cell with more than three live neighbours dies, as if by overpopulation.
-        deaths.add(eid);
-      }
-
-      // Any dead cell with exactly three live neighbours becomes a live
-      // cell, as if by reproduction.
-      for (const [x, y] of deadCells) {
-        const { liveNeighborCount, avgHue } = scanNeighbors(world, x, y);
-        if (liveNeighborCount === 3) {
-          births[`${x}:${y}`] = [x, y, avgHue];
-        }
-      }
-    }
-
-    // Drop presence slightly for survivors so they pulse a little.
-    for (const eid of survivals) {
-      cell.eid = eid;
-      if (cell.presence === 1.0) cell.presence = 0.4 + Math.random() * 0.2;
-    }
-
-    // Apply deaths to cells as appropriate.
-    for (const eid of deaths) {
-      Cell.alive[eid] = false;
-    }
-
-    // Birth new live cells
-    for (const [x, y, avgHue] of Object.values(births)) {
-      if (lifeGrid[x][y]) {
-        // There's a decaying corpse here to be clobbered.
-        removeEntity(world, lifeGrid[x][y]);
-      }
-
-      // Shift the hue for the new cell slighly from average parents' hue
-      let hue = avgHue + 4 / 360;
-      if (hue >= 1.0) hue = 0.0;
-
-      const newCell = CellEntity.spawn(world, {
-        Cell: {
-          alive: true,
-          presence: Math.random() * 0.5,
-          x,
-          y,
-          hue,
-        },
-      });
-      lifeGrid[x][y] = newCell.eid;
-    }
-
-    return world;
+const scanNeighbors = (() => {
+  // HACK: maintain a private object to reuse for return results to save on
+  // garbage collection since this function is called an enormous amount.
+  const result = {
+    liveNeighborCount: 0,
+    deadCells: [],
+    hues: [],
+    avgHue: 0,
   };
 
-const scanNeighbors = (world, scanX, scanY) => {
-  const { lifeGrid } = world;
+  return (world, scanX, scanY) => {
+    const { lifeGrid } = world;
 
-  let liveNeighborCount = 0;
-  const hues = [];
-  const deadCells = [];
-  for (let x = scanX - 1; x <= scanX + 1; x++) {
-    for (let y = scanY - 1; y <= scanY + 1; y++) {
-      if (
-        (x === scanX && y === scanY) ||
-        x < 0 ||
-        x >= LIFE_GRID_WIDTH ||
-        y < 0 ||
-        y >= LIFE_GRID_HEIGHT
-      ) {
-        // Ignore cell's own position and anything out of bounds.
-        continue;
-      }
-      const eid = lifeGrid[x][y];
-      if (Cell.alive[eid]) {
-        liveNeighborCount++;
-        hues.push(Cell.hue[eid]);
-      } else {
-        deadCells.push([x, y]);
+    result.liveNeighborCount = 0;
+    result.deadCells.length = 0;
+    result.hues.length = 0;
+
+    for (let x = scanX - 1; x <= scanX + 1; x++) {
+      for (let y = scanY - 1; y <= scanY + 1; y++) {
+        if (
+          (x === scanX && y === scanY) ||
+          x < 0 ||
+          x >= LIFE_GRID_WIDTH ||
+          y < 0 ||
+          y >= LIFE_GRID_HEIGHT
+        ) {
+          // Ignore cell's own position and anything out of bounds.
+          continue;
+        }
+        const eid = lifeGrid[x][y];
+        if (Cell.alive[eid]) {
+          result.liveNeighborCount++;
+          result.hues.push(Cell.hue[eid]);
+        } else {
+          result.deadCells.push(x);
+          result.deadCells.push(y);
+        }
       }
     }
-  }
 
-  const avgHue = hues.reduce((acc, hue) => acc + hue, 0) / hues.length;
+    result.avgHue =
+      result.hues.reduce((acc, hue) => acc + hue, 0) / result.hues.length;
 
-  return { liveNeighborCount, deadCells, avgHue };
-};
+    return result;
+  };
+})();
 
 const lifeRenderer = (options) => (world) => {
   const {
@@ -417,10 +440,10 @@ function setupTwiddles({
     y: { min: -1000, max: 1000 },
   });
   */
-  f.addInput(lifeOptions, "stepPeriod", { min: 0.01, max: 3.0 });
+  f.addInput(lifeOptions, "stepPeriod", { min: 0.01, max: 2.0 });
   f.addSeparator();
   f.addInput(lifeOptions, "autospawnEnabled");
-  f.addInput(lifeOptions, "autospawnPeriod", { min: 0.5, max: 30 });
+  f.addInput(lifeOptions, "autospawnPeriod", { min: 0.5, max: 5 });
   f.addMonitor(world, "autospawnDelay");
   f.addButton({ title: "Spawn" }).on("click", () => spawnRandomCells(world));
   f.addSeparator();
