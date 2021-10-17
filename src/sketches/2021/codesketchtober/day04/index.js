@@ -111,10 +111,13 @@ class CellEntity extends BaseEntityProxy {
     const { lifeGrid } = world;
 
     // Find an unoccupied grid cell.
-    let x, y;
+    let x, y, tries = 0;
     do {
       x = Math.floor(Math.random() * LIFE_GRID_WIDTH);
       y = Math.floor(Math.random() * LIFE_GRID_HEIGHT);
+      
+      // Give up if it's too hard to find a clear cell.
+      if (tries++ > 10) return;
     } while (lifeGrid[x][y]);
 
     const cell = this.spawn(world, {
