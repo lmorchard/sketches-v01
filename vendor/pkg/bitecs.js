@@ -223,7 +223,16 @@ var globalEntityCursor = 0;
 var globalSize = defaultSize;
 var getGlobalSize = () => globalSize;
 var removed = [];
+var resetGlobals = () => {
+  globalSize = defaultSize;
+  globalEntityCursor = 0;
+  removed.length = 0;
+};
 var getDefaultSize = () => defaultSize;
+var setDefaultSize = (size) => {
+  defaultSize = size;
+  resetGlobals();
+};
 var getEntityCursor = () => globalEntityCursor;
 var eidToWorld = new Map();
 var addEntity = (world) => {
@@ -601,4 +610,4 @@ var pipe = (...fns) => (input) => {
 };
 var Types = TYPES_ENUM;
 
-export { Types, addComponent, addEntity, createWorld, defineComponent, defineQuery, enterQuery, exitQuery, hasComponent, pipe, removeComponent };
+export { Types, addComponent, addEntity, createWorld, defineComponent, defineQuery, enterQuery, exitQuery, hasComponent, pipe, removeComponent, removeEntity, setDefaultSize };
