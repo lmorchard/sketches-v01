@@ -21,9 +21,8 @@ import { AdvancedBloomFilter, CRTFilter, RGBSplitFilter } from "../../../../vend
 
 import { Pane } from "../../../../vendor/pkg/tweakpane.js";
 
-const LIFE_GRID_WIDTH = 50;
-const LIFE_GRID_HEIGHT = 50;
-const SPAWN_THRESHOLD = 10;
+const LIFE_GRID_WIDTH = 100;
+const LIFE_GRID_HEIGHT = 100;
 
 async function main() {
   const world = World.init();
@@ -55,6 +54,7 @@ async function main() {
 
   const { paneUpdateSystem } = setupTwiddles({
     title: "Life and Growth",
+    expanded: true,
     world,
     renderOptions,
     lifeOptions,
@@ -76,7 +76,11 @@ async function main() {
   console.log("READY.");
 }
 
-function spawnRandomCells(world, count = 50, initialHue = 135 / 360) {
+function spawnRandomCells(
+  world,
+  count = LIFE_GRID_WIDTH * 5,
+  initialHue = 135 / 360
+) {
   for (let idx = 0; idx < count; idx++) {
     CellEntity.spawnRandom(world, initialHue);
   }
@@ -159,7 +163,7 @@ const lifeUpdateSystem =
       if (world.autospawnDelay && world.autospawnDelay > 0) {
         world.autospawnDelay -= deltaSec;
       } else {
-        world.autospawnDelay = autospawnPeriod;        
+        world.autospawnDelay = autospawnPeriod;
         spawnRandomCells(world);
       }
     }
@@ -299,7 +303,7 @@ const lifeRenderer = (options) => (world) => {
     (height * 0.95) / LIFE_GRID_HEIGHT,
   ].sort((a, b) => a - b)[0];
 
-  const cellMargin = Math.floor(cellSize * 0.15);
+  const cellMargin = Math.floor(cellSize * 0.25);
 
   const gridWidth = LIFE_GRID_WIDTH * cellSize;
   const gridHeight = LIFE_GRID_HEIGHT * cellSize;
@@ -405,7 +409,7 @@ function setupTwiddles({
   const pane = new Pane();
 
   const f = pane.addFolder({ title, expanded });
-  f.addMonitor(world, "fps"/*, { view: "graph", min: 0, max: 65 } */);
+  f.addMonitor(world, "fps" /*, { view: "graph", min: 0, max: 65 } */);
   /*
   f.addInput(renderOptions, "zoom", { min: 0.1, max: 10.0 });
   f.addInput(renderOptions, "camera", {
