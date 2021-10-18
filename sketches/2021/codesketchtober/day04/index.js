@@ -4,20 +4,16 @@ import {
   defineComponent,
   Types,
   removeEntity,
-  setDefaultSize,
   addEntity,
 } from "../../../../vendor/pkg/bitecs.js";
 
 import { hslToRgb } from "../../../../lib/hslToRgb.js";
-import easings from "../../../../lib/easings.js";
-import { lerp } from "../../../../lib/transitions.js";
+
 import { BaseComponentProxy, BaseEntityProxy } from "../../../../lib/ecsUtils.js";
-import * as Stats from "../../../../lib/stats.js";
 import * as World from "../../../../lib/world.js";
 
-import * as PIXI from "../../../../vendor/pkg/pixijs.js";
+import { autoSizedRenderer } from "../../../../lib/viewport/pixi.js";
 import { SmoothGraphics as Graphics } from "../../../../vendor/pkg/@pixi/graphics-smooth.js";
-import { AdvancedBloomFilter, CRTFilter, RGBSplitFilter } from "../../../../vendor/pkg/pixi-filters.js";
 
 import { Pane } from "../../../../vendor/pkg/tweakpane.js";
 
@@ -39,10 +35,7 @@ async function main() {
   world.lifeGrid = lifeGrid;
   world.autospawnDelay = 0.0;
 
-  const renderOptions = {
-    camera: { x: 0, y: 0 },
-    zoom: 1.0,
-  };
+  const renderOptions = {};
 
   const lifeOptions = {
     stepPeriod: 0.05,
@@ -111,11 +104,13 @@ class CellEntity extends BaseEntityProxy {
     const { lifeGrid } = world;
 
     // Find an unoccupied grid cell.
-    let x, y, tries = 0;
+    let x,
+      y,
+      tries = 0;
     do {
       x = Math.floor(Math.random() * LIFE_GRID_WIDTH);
       y = Math.floor(Math.random() * LIFE_GRID_HEIGHT);
-      
+
       // Give up if it's too hard to find a clear cell.
       if (tries++ > 10) return;
     } while (lifeGrid[x][y]);
@@ -367,63 +362,6 @@ const lifeRenderer = (options) => (world) => {
 
   return world;
 };
-
-const autoSizedRenderer =
-  (options = {}) =>
-  (world) => {
-    const { parentId = "main", camera = { x: 0, y: 0 }, zoom = 1.0 } = options;
-
-    if (!world.renderer) {
-      const parentNode = document.getElementById(parentId);
-      const { clientWidth, clientHeight } = parentNode;
-
-      const renderer = new PIXI.Renderer({
-        width: clientWidth,
-        height: clientHeight,
-        antialias: true,
-        autoDensity: true,
-      });
-      parentNode.appendChild(renderer.view);
-
-      const filterStage = new PIXI.Container();
-
-      const bloom = new AdvancedBloomFilter({
-        threshold: 0.2,
-        bloomScale: 1.5,
-        brightness: 1.0,
-        blur: 1.5,
-        quality: 5,
-      });
-
-      filterStage.filters = [new PIXI.filters.FXAAFilter(), bloom];
-
-      const stage = new PIXI.Container();
-      stage.sortableChildren = true;
-      filterStage.addChild(stage);
-
-      Object.assign(world, { renderer, filterStage, bloom, stage });
-    }
-
-    const { renderer, stage, filterStage } = world;
-    const { width, height } = renderer;
-    const { clientWidth, clientHeight } = renderer.view.parentNode;
-
-    let centerX = clientWidth / 2 - camera.x * zoom;
-    let centerY = clientHeight / 2 - camera.y * zoom;
-
-    stage.x = centerX;
-    stage.y = centerY;
-    stage.scale.x = zoom;
-    stage.scale.y = zoom;
-
-    if (clientWidth !== width || clientHeight !== height) {
-      renderer.resize(clientWidth, clientHeight);
-    }
-
-    renderer.render(filterStage);
-
-    return world;
-  };
 
 function setupTwiddles({
   title = "Twiddles",
