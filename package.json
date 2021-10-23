@@ -6,10 +6,15 @@
   "author": "Les Orchard <me@lmorchard.com>",
   "license": "MIT",
   "scripts": {
-    "start": "snowpack dev",
-    "build": "snowpack build"
+    "start": "npm-run-all -p start:*",
+    "start:wasm": "cargo watch -C src-wasm/wasm_play -s 'wasm-pack build -d ../../src/wasm/wasm_play --out-name index'",
+    "start:snowpack": "snowpack dev",
+    "build": "npm-run-all build:*",
+    "build:wasm": "wasm-pack build src-wasm/wasm_play -d ../../src/wasm/wasm_play --out-name index",
+    "build:snowpack": "snowpack build"
   },
   "dependencies": {
+    "@jaames/iro": "^5.5.2",
     "@pixi/constants": "^6.1.2",
     "@pixi/core": "^6.1.2",
     "@pixi/filter-alpha": "^6.1.2",
@@ -35,7 +40,7 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@jaames/iro": "^5.5.2",
+    "@emily-curry/snowpack-plugin-wasm-pack": "^1.1.4",
     "@snowpack/plugin-run-script": "^2.3.0",
     "glob": "^7.2.0",
     "http-server": "^13.0.0",
@@ -48,6 +53,7 @@
     "snowpack": "^3.8.6",
     "snowpack-plugin-assets": "^0.1.2",
     "snowpack-plugin-ejs": "^1.0.2",
-    "snowpack-plugin-hash": "^0.16.0"
+    "snowpack-plugin-hash": "^0.16.0",
+    "snowpack-plugin-wasm-pack": "^1.1.0"
   }
 }

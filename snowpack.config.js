@@ -6,8 +6,10 @@ const glob = require("glob");
 
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {
-  root: "src",
-  mount: {},
+  mount: {
+    src: { url: "/" },
+  },
+  exclude: [],
   plugins: [
     [
       "snowpack-plugin-ejs",
@@ -15,7 +17,7 @@ module.exports = {
         renderOptions: {
           async: true,
         },
-        // Behold my primitive static site generator shoehorned into snowpack 
+        // Behold my primitive static site generator shoehorned into snowpack
         renderData: ({ filePath }) => {
           const sketchesPath = path.join(path.dirname(filePath), "sketches");
           const sketches = glob
@@ -34,6 +36,16 @@ module.exports = {
         },
       },
     ],
+    [
+      "snowpack-plugin-wasm-pack",
+      { projectPath: "./src-wasm/wasm_play" },
+    ],
+    /*
+    [
+      "snowpack-plugin-wasm-pack",
+      { projectPath: "../src-wasm/perlin", outDir: "../../src/wasm/perlin" },
+    ],
+    */
     // TODO https://www.npmjs.com/package/snowpack-plugin-assets
     // ["snowpack-plugin-assets", { assets: { from: [], to: "" } }],
     // ["snowpack-plugin-hash"],

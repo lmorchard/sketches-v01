@@ -16,6 +16,9 @@ jobs:
       - name: Cache ♻
         uses: egordm/gha-yarn-node-cache@v1
 
+      - name: Setup wasm-pack 📦✨
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
       - name: Install 🔧
         run: yarn install
 
