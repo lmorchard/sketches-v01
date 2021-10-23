@@ -1,14 +1,28 @@
 import WasmPlayInit from "wasm_play";
+import PerlinInit, { NoiseGrid } from "perlin";
 
 async function main() {
   const WasmPlay = await WasmPlayInit();
+  const Perlin = await PerlinInit();
+
   console.log(WasmPlay.add(2, 5));
   console.log(WasmPlay.mult(5, 5, 3));
-  console.log(WasmPlay.noise(0.1, 0.2, 0.3));
-  console.log(WasmPlay.noise(0.2, 0.2, 0.3));
-  console.log(WasmPlay.noise(0.3, 0.2, 0.3));
-  console.log(WasmPlay.noise_grid);
-  const v = WasmPlay.noise_grid(10, 10, 1);
+
+  console.log(Perlin.noise(0.1, 0.2, 0.3));
+  console.log(Perlin.noise(0.2, 0.2, 0.3));
+  console.log(Perlin.noise(0.3, 0.2, 0.3));
+
+  const noise = window.noise = (x, y, z) => {
+    const grid = NoiseGrid.new(x, y, z);
+    const cells = new Float64Array(
+      Perlin.memory.buffer,
+      grid.cells(),
+      grid.width() * grid.height()
+    );
+    return cells;
+  };
+
+  console.log("CELLS", noise(10, 10, 0.2));
 
   console.log("READY.");
 

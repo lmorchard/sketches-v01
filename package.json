@@ -6,12 +6,8 @@
   "author": "Les Orchard <me@lmorchard.com>",
   "license": "MIT",
   "scripts": {
-    "start": "npm-run-all -p start:*",
-    "start:wasm": "cargo watch -C src-wasm/wasm_play -s 'wasm-pack build -d ../../src/wasm/wasm_play --out-name index'",
-    "start:snowpack": "snowpack dev",
-    "build": "npm-run-all build:*",
-    "build:wasm": "wasm-pack build src-wasm/wasm_play -d ../../src/wasm/wasm_play --out-name index",
-    "build:snowpack": "snowpack build"
+    "start": "snowpack dev",
+    "build": "snowpack build"
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",
