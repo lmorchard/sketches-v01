@@ -12,11 +12,6 @@ extern "C" {
     fn alert(s: &str);
 }
 
-#[wasm_bindgen]
-pub fn greet() {
-    alert("Hello, perlin!");
-}
-
 static P: [usize; 512] = [
     151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69,
     142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219,
@@ -54,24 +49,26 @@ pub struct NoiseGrid {
 
 #[wasm_bindgen]
 impl NoiseGrid {
-    pub fn new(width: u32, height: u32, z: f64) -> NoiseGrid {
-        let cells = (0..height)
+    pub fn new(width: u32, height: u32) -> NoiseGrid {
+        NoiseGrid {
+            width,
+            height,
+            cells: Vec::new(),
+        }
+    }
+
+    pub fn update(&mut self, start_x: f64, start_y: f64, z: f64, factor: f64) {
+        self.cells = (0..self.height)
             .flat_map(|row| {
-                (0..width)
+                (0..self.width)
                     .map(|col| {
-                        let x = col as f64 / width as f64;
-                        let y = row as f64 / height as f64;
+                        let x = start_x + col as f64 / self.width as f64 * factor;
+                        let y = start_y + row as f64 / self.height as f64 * factor;
                         noise(x, y, z)
                     })
                     .collect::<Vec<f64>>()
             })
             .collect::<Vec<f64>>();
-
-        NoiseGrid {
-            width,
-            height,
-            cells,
-        }
     }
 
     pub fn width(&self) -> u32 {
@@ -84,42 +81,6 @@ impl NoiseGrid {
 
     pub fn cells(&self) -> *const f64 {
         self.cells.as_ptr()
-    }
-}
-
-/// Runs `noise` over an entire grid, given its width, height, and z
-#[wasm_bindgen]
-pub fn noise_grid(width: usize, height: usize, z: f64) -> Vec<u8> {
-    (0..height)
-        .flat_map(|row| {
-            (0..width)
-                .map(|col| {
-                    let x = col as f64 / width as f64;
-                    let y = row as f64 / height as f64;
-                    let noise = noise(x, y, z);
-                    distinct_lines(noise)
-                })
-                .flatten()
-                .collect::<Vec<u8>>()
-        })
-        .collect::<Vec<u8>>()
-}
-
-/// Binarizes a noise value, based on the first two decimal places
-fn distinct_lines(noise: f64) -> Vec<u8> {
-    let gray = vec![237, 239, 242, 255]; // RGBA
-    let white = vec![255, 255, 255, 255]; // RGBA
-    let decimal_places = (noise * 100.0).round() / 100.0;
-    if decimal_places == 0.10
-        || decimal_places == 0.30
-        || decimal_places == 0.40
-        || decimal_places == 0.50
-        || decimal_places == 0.07
-        || decimal_places == 0.02
-    {
-        gray
-    } else {
-        white
     }
 }
 
