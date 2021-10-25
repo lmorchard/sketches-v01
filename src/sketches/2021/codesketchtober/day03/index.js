@@ -27,176 +27,206 @@ import { Pane } from "tweakpane";
 import NoiseGeneratorInit, { SimplexNoiseGrid, Marcher } from "noise-generator";
 
 async function main() {
-  const NoiseGenerator = await NoiseGeneratorInit();
-
-  /*
-  const world = World.init();
-
-  const { paneUpdateSystem } = setupTwiddles({
-    title: "Archaeology",
-    expanded: true,
-    world,
-  });
-  */
-
-  var cnvsb = document.getElementById("cnvsb");
-  var g = cnvsb.getContext("2d");
+  var canvas = document.getElementById("cnvsb");
+  var g = canvas.getContext("2d");
 
   var w = 900;
-  var resolution = 32;
+  var resolution = 128;
   const gridSize = w / resolution;
   const pixSize = Math.ceil(gridSize * 1.2);
 
   cnvsb.width = cnvsb.height = w;
 
-  const factor = Math.sqrt(2) / 2;
-  const mod = 25;
-  const band = 2;
-
-  const simplexNoiseGrid = SimplexNoiseGrid.new();
+  const NoiseGenerator = await NoiseGeneratorInit();
   const marcher = Marcher.new();
 
-  function render(startX = 0.0, startY = 0.0, z = 1.0) {
-    simplexNoiseGrid.update(
-      0.005,
-      z,
-      startX,
-      gridSize,
-      startX + w,
-      startY,
-      gridSize,
-      startY + w
-    );
-    const cells = new Float64Array(
-      NoiseGenerator.memory.buffer,
-      simplexNoiseGrid.cells(),
-      simplexNoiseGrid.width() * simplexNoiseGrid.height()
-    );
+  const state = {
+    x: 0,
+    y: 0,
+    z: 0,
+    inProgress: false,
+    width: null,
+    height: null,
+    cells: null,
+    resolution,
+    gridSize,
+    pixSize,
+    w,
+    marcher,
+    NoiseGenerator,
+  };
 
-    g.clearRect(0, 0, cnvsb.width, cnvsb.width);
+  const worker = new Worker("./worker.js", { type: "module" });
 
-    for (let y = 0; y < resolution; y++) {
-      for (let x = 0; x < resolution; x++) {
-        const noiseVal = cells[y * resolution + x];
-        const rnd = (noiseVal + 1.0) / 2;
+  const update = () => {
+    state.x += 0.5;
+    state.y += 0.5;
+    state.z += 0.5;
 
-        var v1 = Math.floor(rnd * 255);
-        g.fillStyle = "rgb(" + v1 + "," + v1 + "," + v1 + ")";
-        g.fillRect(x * gridSize, y * gridSize, pixSize, pixSize);
-      }
+    if (!state.inProgress) {
+      state.inProgress = true;
+      worker.postMessage({
+        op: "generateNoise",
+        scale: 0.005,
+        z: state.z,
+        startX: state.x,
+        stepX: gridSize,
+        endX: state.x + w,
+        startY: state.y,
+        stepY: gridSize,
+        endY: state.y + w,
+      });
     }
 
-    for (let isovalue = -1.0; isovalue < 1.0; isovalue += 0.2) {
-      g.strokeStyle = `hsl(${Math.floor(
-        120 + ((isovalue + 1.0) / 2) * 200
-      )}, 100%, 50%)`;
-      g.lineWidth = 1 / (gridSize / 2);
-
-      marcher.update(
-        isovalue,
-        simplexNoiseGrid.width(),
-        simplexNoiseGrid.height(),
-        cells
-      );
-      const marcher_cells = new Uint8Array(
-        NoiseGenerator.memory.buffer,
-        marcher.cells(),
-        marcher.width() * marcher.height()
-      );
-
-      for (let y = 1; y < resolution; y++) {
-        for (let x = 1; x < resolution; x++) {
-          const cell = marcher_cells[(y - 1) * resolution + (x - 1)];
-
-          g.save();
-          g.translate((x - 1) * gridSize, (y - 1) * gridSize);
-
-          g.scale(gridSize / 2, gridSize / 2);
-          g.beginPath();
-
-          switch (cell) {
-            case 0:
-            case 15:
-              break;
-            case 1:
-            case 14:
-              g.moveTo(0, 1);
-              g.lineTo(1, 2);
-              break;
-            case 2:
-            case 13:
-              g.moveTo(1, 2);
-              g.lineTo(2, 1);
-              break;
-            case 3:
-            case 12:
-              g.moveTo(0, 1);
-              g.lineTo(2, 1);
-              break;
-            case 4:
-              g.moveTo(1, 0);
-              g.lineTo(2, 1);
-              break;
-            case 5:
-              g.moveTo(0, 1);
-              g.lineTo(1, 0);
-              g.moveTo(1, 2);
-              g.lineTo(2, 1);
-              break;
-            case 6:
-            case 9:
-              g.moveTo(1, 0);
-              g.lineTo(1, 2);
-              break;
-            case 7:
-              g.moveTo(0, 1);
-              g.lineTo(1, 0);
-              break;
-            case 8:
-              g.moveTo(0, 1);
-              g.lineTo(1, 0);
-              break;
-            case 10:
-              g.moveTo(0, 1);
-              g.lineTo(1, 2);
-              g.moveTo(1, 0);
-              g.lineTo(2, 1);
-              break;
-            case 11:
-              g.moveTo(1, 0);
-              g.lineTo(2, 1);
-              break;
-          }
-          g.stroke();
-          g.restore();
-        }
-      }
+    if (state.cells) {
+      drawFrame(g, state);
     }
-  }
-  window.render = render;
 
-  let x = 0.0;
-  let y = 0.0;
-  let z = 0.0;
-  const renderFrame = () => {
-    //x += 0.5;
-    //y += 0.5;
-    z += 0.5;
-    render(x, y, z);
-    requestAnimationFrame(renderFrame);
+    requestAnimationFrame(update);
   };
-  renderFrame();
 
-  document.getElementById("render").onclick = () => {
-    x += 0.5;
-    y += 0.5;
-    z += 0.5;
-    render(x, y, z);
-  };
+  worker.onmessage = onWorkerMessage({ worker, g, state, update });
 
   // world.run(pipe(paneUpdateSystem), pipe(autoSizedRenderer(), geoRenderer()));
 
   console.log("READY.");
+}
+
+const onWorkerMessage =
+  ({ worker, g, marcher, state, update }) =>
+  (event) => {
+    const { data } = event;
+    const { op } = data;
+
+    switch (op) {
+      case "ready": {
+        console.log("WORKER READY.");
+        update();
+        break;
+      }
+      case "generateNoiseResult": {
+        const { width, height, cells } = data;
+        state.cells = cells;
+        state.cellsWidth = width;
+        state.cellsHeight = height;
+        state.inProgress = false;
+        break;
+      }
+      default: {
+        //console.log("DEFAULT HANDLER", data);
+      }
+    }
+  };
+
+function drawFrame(
+  g,
+  {
+    cells,
+    cellsWidth,
+    cellsHeight,
+    resolution,
+    gridSize,
+    pixSize,
+    marcher,
+    NoiseGenerator,
+  }
+) {
+  g.clearRect(0, 0, cnvsb.width, cnvsb.width);
+
+  for (let y = 0; y < resolution; y++) {
+    for (let x = 0; x < resolution; x++) {
+      const noiseVal = cells[y * resolution + x];
+      const rnd = Math.max(0.0, Math.min(1.0, (noiseVal + 1.0) / 2 - 0.1));
+
+      var v1 = Math.floor(rnd * 255);
+      g.fillStyle = "rgb(" + v1 + "," + v1 + "," + v1 + ")";
+      g.fillRect(x * gridSize, y * gridSize, pixSize, pixSize);
+    }
+  }
+
+  /*
+  for (let isovalue = -1.0; isovalue < 1.0; isovalue += 0.2) {
+    g.strokeStyle = `hsl(${Math.floor(
+      120 + ((isovalue + 1.0) / 2) * 200
+    )}, 100%, 50%)`;
+    g.lineWidth = 1 / (gridSize / 2);
+
+    marcher.update(isovalue, cellsWidth, cellsHeight, cells);
+    const marcher_cells = new Uint8Array(
+      NoiseGenerator.memory.buffer,
+      marcher.cells(),
+      marcher.width() * marcher.height()
+    );
+
+    for (let y = 1; y < resolution; y++) {
+      for (let x = 1; x < resolution; x++) {
+        const cell = marcher_cells[(y - 1) * resolution + (x - 1)];
+
+        g.save();
+        g.translate((x - 1) * gridSize, (y - 1) * gridSize);
+
+        g.scale(gridSize / 2, gridSize / 2);
+        g.beginPath();
+
+        switch (cell) {
+          case 0:
+          case 15:
+            break;
+          case 1:
+          case 14:
+            g.moveTo(0, 1);
+            g.lineTo(1, 2);
+            break;
+          case 2:
+          case 13:
+            g.moveTo(1, 2);
+            g.lineTo(2, 1);
+            break;
+          case 3:
+          case 12:
+            g.moveTo(0, 1);
+            g.lineTo(2, 1);
+            break;
+          case 4:
+            g.moveTo(1, 0);
+            g.lineTo(2, 1);
+            break;
+          case 5:
+            g.moveTo(0, 1);
+            g.lineTo(1, 0);
+            g.moveTo(1, 2);
+            g.lineTo(2, 1);
+            break;
+          case 6:
+          case 9:
+            g.moveTo(1, 0);
+            g.lineTo(1, 2);
+            break;
+          case 7:
+            g.moveTo(0, 1);
+            g.lineTo(1, 0);
+            break;
+          case 8:
+            g.moveTo(0, 1);
+            g.lineTo(1, 0);
+            break;
+          case 10:
+            g.moveTo(0, 1);
+            g.lineTo(1, 2);
+            g.moveTo(1, 0);
+            g.lineTo(2, 1);
+            break;
+          case 11:
+            g.moveTo(1, 0);
+            g.lineTo(2, 1);
+            break;
+        }
+        g.stroke();
+        g.restore();
+      }
+    }
+  }
+  */
 }
 
 function setupTwiddles({ title = "Twiddles", expanded = false, world }) {

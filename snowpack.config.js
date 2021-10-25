@@ -36,7 +36,18 @@ module.exports = {
         },
       },
     ],
-    ["snowpack-plugin-wasm-pack", { projectPath: "./src-wasm/noise-generator" }],
+    [
+      "@emily-curry/snowpack-plugin-wasm-pack",
+      { projectPath: "./src-wasm/noise-generator" },
+    ],
+    [
+      "@emily-curry/snowpack-plugin-wasm-pack",
+      {
+        projectPath: "./src-wasm/noise-generator",
+        outName: "index-no-modules",
+        target: "no-modules",
+      },
+    ],
     ["snowpack-plugin-wasm-pack", { projectPath: "./src-wasm/wasm_play" }],
     ["snowpack-plugin-wasm-pack", { projectPath: "./src-wasm/perlin" }],
     // TODO https://www.npmjs.com/package/snowpack-plugin-assets
