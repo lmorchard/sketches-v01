@@ -1,0 +1,14 @@
+{
+  "name": "noise-generator",
+  "collaborators": [
+    "Les Orchard <me@lmorchard.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "index-no-modules_bg.wasm",
+    "index-no-modules.js",
+    "index-no-modules.d.ts"
+  ],
+  "browser": "index-no-modules.js",
+  "types": "index-no-modules.d.ts"
+}
