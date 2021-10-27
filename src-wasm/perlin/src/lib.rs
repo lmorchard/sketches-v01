@@ -12,6 +12,8 @@ extern "C" {
     fn alert(s: &str);
 }
 
+// Borrowed from https://github.com/SaltyQuetzals/perlin-noise-wasm/blob/master/src/lib.rs
+
 static P: [usize; 512] = [
     151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69,
     142, 8, 99, 37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219,
