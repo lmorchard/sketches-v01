@@ -169,21 +169,20 @@ impl ContourMap {
         self.height = self.noise_grid.height() - 1;
         self.isoval_step_size = self.width * self.height;
 
-        self.result_contour.clear();
-        self.result_contour
-            .resize(self.isoval_count * self.isoval_step_size, 0);
-
         let cells = self.noise_grid.cells();
         let width = self.noise_grid.width();
         let height = self.noise_grid.height();
 
         let mut result_contour_idx = 0;
-        let isovalue_start = -0.3;
+        let isovalue_start = -1.0;
         let isovalue_step = 0.3;
-        let isovalue_end = 0.3;
+        let isovalue_end = 1.0;
         let isovalue_spread = isovalue_end - isovalue_start;
 
         self.isoval_count = (isovalue_spread / isovalue_step) as usize;
+        self.result_contour.clear();
+        self.result_contour
+            .resize(self.isoval_count * self.isoval_step_size, 0);
         
         for isovalue_idx in 0..self.isoval_count {
             let isovalue = isovalue_start + isovalue_step * isovalue_idx as f64;

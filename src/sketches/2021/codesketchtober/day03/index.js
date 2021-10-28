@@ -6,7 +6,7 @@ async function main() {
   var canvas = document.getElementById("cnvsb");
   var g = canvas.getContext("2d");
 
-  var w = 900;
+  var w = 720;
   var resolution = 32;
   const gridSize = w / resolution;
   const pixSize = Math.ceil(gridSize);
@@ -136,11 +136,11 @@ function drawFrame(
     }
   }
 
-  let saturation = 10;
+  let saturation = 30;
   for (let isoIdx = 0; isoIdx < isovalCount; isoIdx++) {
     g.lineWidth = 1 / (gridSize / 3);
     g.strokeStyle = `hsla(120, ${saturation}%, 50%)`;
-    saturation += 20;
+    saturation += 10;
 
     if (true) {
       for (let y = 1; y < resolution; y++) {
