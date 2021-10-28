@@ -14,10 +14,10 @@ import { autoSizedRenderer } from "../../../../lib/viewport/pixi.js";
 import { Pane } from "../../../../vendor/pkg/tweakpane.js";
 
 import FontFutural from "../../../../fonts/futural.json.proxy.js";
-//import FontFuturam from "../../../../fonts/futuram.json";
-//import FontScripts from "../../../../fonts/scripts.json";
-//import FontScriptc from "../../../../fonts/scriptc.json";
-//import FontRowmant from "../../../../fonts/rowmant.json";
+// import FontFuturam from "../../../../fonts/futuram.json";
+// import FontScripts from "../../../../fonts/scripts.json";
+// import FontScriptc from "../../../../fonts/scriptc.json";
+// import FontRowmant from "../../../../fonts/rowmant.json";
 
 const ORACLE_SYMBOL_LINE_1 = "ABCDEFGHIJKLM";
 const ORACLE_SYMBOL_LINE_2 = "NOPQRSTUVWXYZ";
@@ -39,7 +39,11 @@ async function main() {
 
   world.run(
     pipe(ouijaUpdateSystem(), movementSystem, paneUpdateSystem),
-    pipe(autoSizedRenderer(renderOptions), ouijaRenderer(renderOptions))
+    pipe(
+      autoSizedRenderer(renderOptions),
+      ouijaRenderer(renderOptions),
+      gridRenderer()
+    )
   );
 
   for (let [line, area] of [
@@ -96,34 +100,56 @@ const ouijaUpdateSystem = (options) => (world) => {
   const entity = new OracleSymbolEntity();
   for (const eid of oracleSymbolQuery(world)) {
     entity.eid = eid;
-    let startY, startX, endX, stepX;
     const { area, order } = entity.OracleSymbol;
     switch (area) {
       case ORACLE_SYMBOL_AREAS.LINE_1: {
         const count = ORACLE_SYMBOL_LINE_1.length;
-        const radius = 100;
+        /*
+        const radius = 2200;
+        const cy = 1900;
         const cx = 0;
-        const cy = 0 - (height / 2.0) * 0.66;
-        const t = (0 - Math.PI) + (Math.PI) * (order / (count - 1));
+        const startT = (0 - Math.PI * 0.5) - Math.PI / 13;
+        const endT = (0 - Math.PI * 0.5) + Math.PI / 13;
+        const stepT = (endT - startT) / count;
+        const t = startT + stepT * order;
         entity.Position.x = cx + Math.cos(t) * radius;
         entity.Position.y = cy + Math.sin(t) * radius;
+        */
+        const startY = 0 - (height / 2.0) * 0.4;
+        const startX = 0 - (width / 2.0) * 0.8;
+        const endX = (width / 2.0) * 0.8;
+        const stepX = (endX - startX) / (count - 1);
+        entity.Position.x = startX + stepX * order;
+        entity.Position.y = startY;
         break;
       }
       case ORACLE_SYMBOL_AREAS.LINE_2: {
         const count = ORACLE_SYMBOL_LINE_2.length;
-        const radius = 100;
+        /*
+        const radius = 2200;
+        const cy = 2050;
         const cx = 0;
-        const cy = 0 - (height / 2.0) * 0.33;
-        const t = (0 - Math.PI) + (Math.PI) * (order / (count - 1));
+        const startT = (0 - Math.PI * 0.5) - Math.PI / 13;
+        const endT = (0 - Math.PI * 0.5) + Math.PI / 13;
+        const stepT = (endT - startT) / count;
+        const t = startT + stepT * order;
         entity.Position.x = cx + Math.cos(t) * radius;
         entity.Position.y = cy + Math.sin(t) * radius;
+        */
+        const startY = 0 - (height / 2.0) * 0.1;
+        const startX = 0 - (width / 2.0) * 0.8;
+        const endX = (width / 2.0) * 0.8;
+        const stepX = (endX - startX) / (count - 1);
+        entity.Position.x = startX + stepX * order;
+        entity.Position.y = startY;
         break;
       }
       case ORACLE_SYMBOL_AREAS.LINE_3: {
-        startY = (height / 2.0) * 0.33;
-        startX = 0 - (width / 2.0) * 0.5;
-        endX = (width / 2.0) * 0.5;
-        stepX = (endX - startX) / ORACLE_SYMBOL_LINE_3.length;
+        const count = ORACLE_SYMBOL_LINE_3.length;
+        const startY = (height / 2.0) * 0.33;
+        const startX = 0 - (width / 2.0) * 0.5;
+        const endX = (width / 2.0) * 0.5;
+        const stepX = (endX - startX) / (count - 1);
         entity.Position.x = startX + stepX * order;
         entity.Position.y = startY;
         break;
@@ -180,6 +206,59 @@ const ouijaRenderer = (options) => (world) => {
   }
 
   return world;
+};
+
+const gridRendererInit = (world) => {
+  const { stage } = world;
+  world.gGrid = new Graphics();
+  stage.addChild(world.gGrid);
+};
+
+const gridRenderer = (options = {}) => (world) => {
+  const {
+    gridSize = 50,
+    gridLineWidth = 2.0,
+    gridLineColor = 0xffffff,
+    gridLineAlpha = 0.05,
+    zoom = 1.0,
+    camera = { x: 0, y: 0 },    
+  } = options;
+
+  if (!world.gGrid) {
+    gridRendererInit(world);
+  }
+
+  const {
+    gGrid: g,
+    renderer: { width, height },
+  } = world;
+
+  g.clear();
+
+  const lineWidth = gridLineWidth; // 2 * (1 / zoom);
+
+  const visibleWidth = Math.floor(width / zoom);
+  const visibleHeight = Math.floor(height / zoom);
+  const visibleLeft = 0 - visibleWidth / 2 + camera.x;
+  const visibleTop = 0 - visibleHeight / 2 + camera.y;
+
+  const gridOffsetX = Math.abs(visibleLeft % gridSize);
+  const gridOffsetY = Math.abs(visibleTop % gridSize);
+
+  const xStart = visibleLeft + gridOffsetX;
+  const xEnd = xStart + visibleWidth + gridOffsetX;
+  const yStart = visibleTop + gridOffsetY;
+  const yEnd = yStart + visibleHeight + gridOffsetY;
+
+  g.lineStyle(lineWidth, gridLineColor, gridLineAlpha);
+  for (let x = xStart; x < xEnd; x += gridSize) {
+    g.moveTo(x, visibleTop);
+    g.lineTo(x, visibleTop + visibleHeight);
+  }
+  for (let y = yStart; y < yEnd; y += gridSize) {
+    g.moveTo(visibleLeft, y);
+    g.lineTo(visibleLeft + visibleWidth, y);
+  }
 };
 
 function setupTwiddles({ title = document.title, expanded = false, world }) {
