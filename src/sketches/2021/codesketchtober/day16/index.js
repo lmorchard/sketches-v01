@@ -166,7 +166,7 @@ class OraclePointerEntity extends BaseEntityProxy {
 
 class PointerSprite {
   static defaultOptions = {
-    reticuleRadius: 50,
+    reticuleRadius: 55,
     reticuleInnerRadius: 40,
   };
 
