@@ -57,7 +57,7 @@ export const autoSizedRenderer =
     const { renderer, stage, filterStage } = world;
     const { width, height } = renderer;
     const { clientWidth, clientHeight } = renderer.view.parentNode;
-    
+
     stage.x = clientWidth / 2;
     stage.y = clientHeight / 2;
 
@@ -68,6 +68,61 @@ export const autoSizedRenderer =
     renderer.render(filterStage);
 
     return world;
+  };
+
+const gridRendererInit = (world) => {
+  const { stage } = world;
+  world.gGrid = new Graphics();
+  stage.addChild(world.gGrid);
+};
+
+export const gridRenderer =
+  (options = {}) =>
+  (world) => {
+    const {
+      gridSize = 50,
+      gridLineWidth = 2.0,
+      gridLineColor = 0xffffff,
+      gridLineAlpha = 0.1,
+      zoom = 1.0,
+      camera = { x: 0, y: 0 },
+    } = options;
+
+    if (!world.gGrid) {
+      gridRendererInit(world);
+    }
+
+    const {
+      gGrid: g,
+      renderer: { width, height },
+    } = world;
+
+    g.clear();
+
+    const lineWidth = gridLineWidth; // 2 * (1 / zoom);
+
+    const visibleWidth = Math.floor(width / zoom);
+    const visibleHeight = Math.floor(height / zoom);
+    const visibleLeft = 0 - visibleWidth / 2 + camera.x;
+    const visibleTop = 0 - visibleHeight / 2 + camera.y;
+
+    const gridOffsetX = Math.abs(visibleLeft % gridSize);
+    const gridOffsetY = Math.abs(visibleTop % gridSize);
+
+    const xStart = visibleLeft + gridOffsetX;
+    const xEnd = xStart + visibleWidth + gridOffsetX;
+    const yStart = visibleTop + gridOffsetY;
+    const yEnd = yStart + visibleHeight + gridOffsetY;
+
+    g.lineStyle(lineWidth, gridLineColor, gridLineAlpha);
+    for (let x = xStart; x < xEnd; x += gridSize) {
+      g.moveTo(x, visibleTop);
+      g.lineTo(x, visibleTop + visibleHeight);
+    }
+    for (let y = yStart; y < yEnd; y += gridSize) {
+      g.moveTo(visibleLeft, y);
+      g.lineTo(visibleLeft + visibleWidth, y);
+    }
   };
 
 class ViewportPixi {

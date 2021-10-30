@@ -1,0 +1,4 @@
+
+class MagicCircleEntity extends BaseEntityProxy {
+  
+}
