@@ -92,37 +92,36 @@ async function main() {
 }
 
 const ouijaUpdateSystem = (options) => (world) => {
+  const symbolEids = oracleSymbolQuery(world);
   const updates = [
     [magicCircleQuery, MagicCircleEntity],
     [oracleSymbolQuery, OracleSymbolEntity],
+    [
+      oraclePointerQuery,
+      OraclePointerEntity,
+      (pointerEntity) => {
+        if (!pointerEntity.OraclePointer.moveActive) {
+          pointerEntity.setTarget(
+            symbolEids[Math.floor(Math.random() * symbolEids.length)]
+          );
+        }
+      },
+    ],
   ];
-  for (const [query, Entity] of updates) {
+  for (const [query, Entity, customUpdate = () => {}] of updates) {
     const eids = query(world);
     const entity = new Entity();
     for (const eid of eids) {
       entity.eid = eid;
+      customUpdate(entity);
       entity.update(world);
     }
-  }
-
-  const symbolEids = oracleSymbolQuery(world);
-  const pointerEntity = new OraclePointerEntity();
-  for (const eid of oraclePointerQuery(world)) {
-    pointerEntity.eid = eid;
-    if (!pointerEntity.OraclePointer.moveActive) {
-      pointerEntity.setTarget(
-        symbolEids[Math.floor(Math.random() * symbolEids.length)]
-      );
-    }
-    pointerEntity.update(world);
-  }
-
+  } 
   return world;
 };
 
 const ouijaRendererInit = (world) => {
   const { stage } = world;
-
   const g = (world.gOuija = new Graphics());
   stage.addChild(world.gOuija);
 };
