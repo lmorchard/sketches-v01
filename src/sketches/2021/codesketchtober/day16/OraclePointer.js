@@ -47,6 +47,7 @@ export class OraclePointerEntity extends BaseEntityProxy {
     const {
       OraclePointer: { targetSymbol },
     } = this;
+
     this.OraclePointer.moveToX = Position.x[targetSymbol];
     this.OraclePointer.moveToY = Position.y[targetSymbol];
 
@@ -88,7 +89,7 @@ export class OraclePointerEntity extends BaseEntityProxy {
   }
 }
 
-export class PointerSprite {
+export class OraclePointerSprite {
   static defaultOptions = {
     reticuleRadius: 55,
     reticuleInnerRadius: 40,

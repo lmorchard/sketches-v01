@@ -12,7 +12,7 @@ import { Pane } from "tweakpane";
 import {
   OraclePointerEntity,
   oraclePointerQuery,
-  PointerSprite,
+  OraclePointerSprite,
 } from "./OraclePointer";
 
 import {
@@ -25,14 +25,18 @@ import {
   OracleSymbolGlyph,
 } from "./OracleSymbol";
 
+import {
+  magicCircleQuery,
+  MagicCircleEntity,
+  MagicCircleSprite,
+} from "./MagicCircle";
+
 async function main() {
   const world = World.init();
 
   const renderOptions = {};
 
-  const { pane, paneUpdateSystem } = setupTwiddles({
-    world,
-  });
+  const { pane, paneUpdateSystem } = setupTwiddles({ world });
 
   world.run(
     pipe(ouijaUpdateSystem(), movementSystem, paneUpdateSystem),
@@ -46,6 +50,27 @@ async function main() {
   OraclePointerEntity.spawn(world, {
     Position: { x: 0, y: 0 },
   });
+
+  const step = 150;
+  for (let y = -350; y <= 350; y += 700) {
+    for (let x = -1000; x <= 1000; x += step) {
+      MagicCircleEntity.spawn(world, {
+        Position: { x, y },
+        Velocity: {
+          r:
+            Math.PI * (0.33 + Math.random() * 0.66) * Math.random() > 0.5
+              ? 1
+              : -1,
+        },
+        MagicCircle: {
+          mainRadius: step * 0.4,
+          innerRadius: step * 0.35,
+          numLines: Math.floor(3 + 5 * Math.random()),
+          numCircles: Math.floor(3 + 5 * Math.random()),
+        },
+      });
+    }
+  }
 
   for (let [line, area] of [
     [ORACLE_SYMBOL_LINE_1, ORACLE_SYMBOL_AREAS.LINE_1],
@@ -67,13 +92,20 @@ async function main() {
 }
 
 const ouijaUpdateSystem = (options) => (world) => {
-  const symbolEids = oracleSymbolQuery(world);
-  const symbolEntity = new OracleSymbolEntity();
-  for (const eid of symbolEids) {
-    symbolEntity.eid = eid;
-    symbolEntity.update(world);
+  const updates = [
+    [magicCircleQuery, MagicCircleEntity],
+    [oracleSymbolQuery, OracleSymbolEntity],
+  ];
+  for (const [query, Entity] of updates) {
+    const eids = query(world);
+    const entity = new Entity();
+    for (const eid of eids) {
+      entity.eid = eid;
+      entity.update(world);
+    }
   }
 
+  const symbolEids = oracleSymbolQuery(world);
   const pointerEntity = new OraclePointerEntity();
   for (const eid of oraclePointerQuery(world)) {
     pointerEntity.eid = eid;
@@ -93,9 +125,6 @@ const ouijaRendererInit = (world) => {
 
   const g = (world.gOuija = new Graphics());
   stage.addChild(world.gOuija);
-
-  world.oracleSymbolGlyphs = new Map();
-  world.oraclePointerSprites = new Map();
 };
 
 const ouijaRenderer = (options) => (world) => {
@@ -112,40 +141,47 @@ const ouijaRenderer = (options) => (world) => {
 
   g.clear();
 
-  const pointerEIDs = oraclePointerQuery(world);
-  const pointerEntity = new OraclePointerEntity();
-  for (const eid of pointerEIDs) {
-    pointerEntity.eid = eid;
-    if (!oraclePointerSprites.has(eid)) {
-      const sprite = new PointerSprite(world, pointerEntity);
-      g.addChild(sprite.root());
-      oraclePointerSprites.set(eid, sprite);
+  const spriteUpdates = [
+    [
+      magicCircleQuery,
+      MagicCircleEntity,
+      MagicCircleSprite,
+      "magicCircleSprites",
+    ],
+    [
+      oraclePointerQuery,
+      OraclePointerEntity,
+      OraclePointerSprite,
+      "oraclePointerSprites",
+    ],
+    [
+      oracleSymbolQuery,
+      OracleSymbolEntity,
+      OracleSymbolGlyph,
+      "oracleSymbolSprites",
+    ],
+  ];
+  for (const [query, Entity, Sprite, spriteMapName] of spriteUpdates) {
+    if (!world[spriteMapName]) {
+      world[spriteMapName] = new Map();
     }
-    oraclePointerSprites.get(eid).update(world, pointerEntity);
-  }
-  for (const eid of oraclePointerSprites.keys()) {
-    if (!pointerEIDs.includes(eid)) {
-      g.removeChild(oraclePointerSprites.get(eid).root());
-      oraclePointerSprites.delete(eid);
+    const spriteMap = world[spriteMapName];
+    const eids = query(world);
+    const entity = new Entity();
+    for (const eid of eids) {
+      entity.eid = eid;
+      if (!spriteMap.has(eid)) {
+        const sprite = new Sprite(world, entity);
+        g.addChild(sprite.root());
+        spriteMap.set(eid, sprite);
+      }
+      spriteMap.get(eid).update(world, entity);
     }
-  }
-
-  const symbolEIDs = oracleSymbolQuery(world);
-  const symbolEntity = new OracleSymbolEntity();
-  for (const eid of symbolEIDs) {
-    symbolEntity.eid = eid;
-    if (!oracleSymbolGlyphs.has(eid)) {
-      const glyph = new OracleSymbolGlyph(world, symbolEntity);
-      g.addChild(glyph.root());
-      oracleSymbolGlyphs.set(eid, glyph);
-    }
-    oracleSymbolGlyphs.get(eid).update(world, symbolEntity);
-  }
-  for (const eid of oracleSymbolGlyphs.keys()) {
-    if (!symbolEIDs.includes(eid)) {
-      g.removeChild(oracleSymbolGlyphs.get(eid).root());
-      oracleSymbolGlyphs.delete(eid);
-      continue;
+    for (const eid of spriteMap.keys()) {
+      if (!eids.includes(eid)) {
+        g.removeChild(spriteMap.get(eid).root());
+        spriteMap.delete(eid);
+      }
     }
   }
 
