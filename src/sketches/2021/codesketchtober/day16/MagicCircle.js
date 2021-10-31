@@ -7,6 +7,7 @@ import { BaseEntityProxy } from "../../../../lib/ecsUtils";
 import { Position, Velocity } from "../../../../lib/positionMotion";
 
 export const MagicCircle = defineComponent({
+  row: Types.ui8,
   mainRadius: Types.f32,
   innerRadius: Types.f32,
   numLines: Types.ui8,
@@ -128,6 +129,7 @@ export class MagicCircleSprite {
 
   update(world, circleEntity) {
     const {
+      renderer: { width, height },
       time: { delta },
     } = world;
 
@@ -154,7 +156,7 @@ export class MagicCircleSprite {
         : delayUntilRewind;
     }
 
-    const g = this.root();
+    const { g } = this;
     g.x = x;
     g.y = y;
     g.rotation = r;

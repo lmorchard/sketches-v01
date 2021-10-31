@@ -4,6 +4,9 @@ import { transition } from "../../../../lib/transitions.js";
 import { SmoothGraphics as Graphics } from "@pixi/graphics-smooth";
 import { BaseEntityProxy } from "../../../../lib/ecsUtils";
 import { Position, Velocity } from "../../../../lib/positionMotion";
+import perlin from "../../../../lib/perlin.js";
+
+const NUM_SIGNAL_POINTS = 36;
 
 export const OraclePointer = defineComponent({
   targetSymbol: Types.eid,
@@ -14,6 +17,8 @@ export const OraclePointer = defineComponent({
   moveToY: Types.f32,
   moveDuration: Types.f32,
   moveElapsed: Types.f32,
+  noiseElapsed: Types.f32,
+  signalPoints: [Types.f32, NUM_SIGNAL_POINTS],
 });
 
 export const oraclePointerQuery = defineQuery([
@@ -27,6 +32,20 @@ export class OraclePointerEntity extends BaseEntityProxy {
     Position,
     Velocity,
     OraclePointer,
+  };
+
+  static defaults = {
+    OraclePointer: {
+      noiseElapsed: 0,
+      signalPoints: () => {
+        const points = [];
+        for (let idx = 0; idx < NUM_SIGNAL_POINTS; idx++) {
+          points.push(0);
+        }
+        points[0] = 1.0;
+        return points;
+      },
+    },
   };
 
   setTarget(eid, duration = 1500.0) {
@@ -91,13 +110,12 @@ export class OraclePointerEntity extends BaseEntityProxy {
 
 export class OraclePointerSprite {
   static defaultOptions = {
-    reticuleRadius: 55,
-    reticuleInnerRadius: 40,
+    reticuleRadius: 30,
+    reticuleInnerRadius: 18,
   };
 
   constructor(world, pointerEntity, options = {}) {
     this.options = { ...this.constructor.defaultOptions, ...options };
-    const { reticuleRadius, reticuleInnerRadius } = this.options;
 
     const g = new Graphics();
 
@@ -107,11 +125,10 @@ export class OraclePointerSprite {
     const gReticule = new Graphics();
     g.addChild(gReticule);
 
-    gReticule.lineStyle(2, 0x33ff33, 1);
-    gReticule.drawCircle(0, 0, reticuleInnerRadius);
-    gReticule.drawCircle(0, 0, reticuleRadius);
+    const gSignals = new Graphics();
+    gReticule.addChild(gSignals);
 
-    Object.assign(this, { g, gReticule, gLines });
+    Object.assign(this, { g, gReticule, gLines, gSignals });
   }
 
   root() {
@@ -119,17 +136,61 @@ export class OraclePointerSprite {
   }
 
   update(world, pointerEntity) {
-    const { gReticule, gLines, options } = this;
-    const { reticuleRadius, reticuleInnerRadius } = options;
+    const { gReticule, gLines, gSignals, options } = this;
     const {
+      OraclePointer: { signalPoints },
       Position: { x, y },
     } = pointerEntity;
     const {
+      time: { delta },
       renderer: { width, height },
     } = world;
 
+    const scale = width / 700;
+    const reticuleRadius = options.reticuleRadius * scale;
+    const reticuleInnerRadius = options.reticuleInnerRadius * scale;
+
+    pointerEntity.OraclePointer.noiseElapsed += delta;
+    if (pointerEntity.OraclePointer.noiseElapsed > 100000) {
+      pointerEntity.OraclePointer.noiseElapsed = 0;
+    }
+
+    gSignals.clear();
+    gSignals.lineStyle(2, 0x33ff33, 1);
+
+    let firstX = null;
+    let firstY = null;
+    const signalStep = (2 * Math.PI) / NUM_SIGNAL_POINTS;
+    for (let idx = 0; idx < NUM_SIGNAL_POINTS; idx++) {
+      const signal = signalPoints[idx] * 0.87;
+      const noise = perlin.get(
+        (idx / NUM_SIGNAL_POINTS) * 10,
+        pointerEntity.OraclePointer.noiseElapsed / 500
+      );
+      const received = Math.min(1.0, Math.max(0.1, signal + noise));
+      const distanceRange = reticuleRadius - reticuleInnerRadius;
+      const signalDistance = received * distanceRange;
+
+      const r = signalStep * idx;
+      const x = 0 + (reticuleInnerRadius + signalDistance) * Math.cos(r);
+      const y = 0 + (reticuleInnerRadius + signalDistance) * Math.sin(r);
+
+      if (firstX === null) {
+        firstX = x;
+        firstY = y;
+        gSignals.moveTo(x, y);
+        continue;
+      } else {
+        gSignals.lineTo(x, y);
+      }
+    }
+    gSignals.lineTo(firstX, firstY);
+
+    gReticule.clear();
     gReticule.x = x;
     gReticule.y = y;
+    gReticule.lineStyle(2, 0x33ff33, 1);
+    gReticule.drawCircle(0, 0, reticuleRadius);
 
     gLines.clear();
     gLines.lineStyle(2, 0x33ff33, 1);

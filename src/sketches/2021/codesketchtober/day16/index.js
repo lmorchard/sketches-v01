@@ -47,10 +47,9 @@ async function main() {
     )
   );
 
-  OraclePointerEntity.spawn(world, {
-    Position: { x: 0, y: 0 },
-  });
+  OraclePointerEntity.spawn(world);
 
+  let row = 0;
   const step = 150;
   for (let y = -350; y <= 350; y += 700) {
     for (let x = -1000; x <= 1000; x += step) {
