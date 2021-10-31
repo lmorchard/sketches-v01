@@ -56,17 +56,9 @@ async function main() {
     for (let x = -1000; x <= 1000; x += step) {
       MagicCircleEntity.spawn(world, {
         Position: { x, y },
-        Velocity: {
-          r:
-            Math.PI * (0.33 + Math.random() * 0.66) * Math.random() > 0.5
-              ? 1
-              : -1,
-        },
         MagicCircle: {
           mainRadius: step * 0.4,
           innerRadius: step * 0.35,
-          numLines: Math.floor(3 + 5 * Math.random()),
-          numCircles: Math.floor(3 + 5 * Math.random()),
         },
       });
     }

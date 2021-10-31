@@ -11,6 +11,12 @@ export const MagicCircle = defineComponent({
   innerRadius: Types.f32,
   numLines: Types.ui8,
   numCircles: Types.ui8,
+  isRewinding: Types.ui8,
+  rewindSpeedFactor: Types.f32,
+  rotationSpeed: Types.f32,
+  phaseDurationRemining: Types.f32,
+  delayUntilRewind: Types.f32,
+  rewindPeriod: Types.f32,
 });
 
 export const magicCircleQuery = defineQuery([Position, Velocity, MagicCircle]);
@@ -26,6 +32,14 @@ export class MagicCircleEntity extends BaseEntityProxy {
     MagicCircle: {
       mainRadius: 80,
       innerRadius: 70,
+      numLines: () => Math.floor(3 + 5 * Math.random()),
+      numCircles: () => Math.floor(3 + 5 * Math.random()),
+      isRewinding: 1,
+      rewindSpeedFactor: 4,
+      rotationSpeed: () => Math.PI * (0.1 + Math.random() * 0.2),
+      phaseDurationRemining: 0,
+      delayUntilRewind: () => 5000 + 5000 * Math.random(),
+      rewindPeriod: () => 1000 + 1000 * Math.random(),
     },
   };
 
@@ -77,8 +91,9 @@ export class MagicCircleSprite {
     }
 
     const circleCenters = [];
-    const circleDistance = (innerRadius * 0.33) + (innerRadius * 0.66) * Math.random();
-    const circleRadius = (innerRadius * 0.2) + (innerRadius * 0.5) * Math.random();
+    const circleDistance =
+      innerRadius * 0.33 + innerRadius * 0.66 * Math.random();
+    const circleRadius = innerRadius * 0.2 + innerRadius * 0.5 * Math.random();
     for (let r = 0; r < Math.PI * 2; r += (Math.PI * 2) / numCircles) {
       const x = 0 + circleDistance * Math.cos(r);
       const y = 0 + circleDistance * Math.sin(r);
@@ -98,7 +113,7 @@ export class MagicCircleSprite {
     gCircles.addChild(gMask);
     gCircles.mask = gMask;
 
-    const maskPoints = points.map(([x,y]) => new PIXI.Point(x, y));
+    const maskPoints = points.map(([x, y]) => new PIXI.Point(x, y));
     const maskPolygon = new PIXI.Polygon(maskPoints);
     gMask.beginFill(0x000000);
     gMask.drawPolygon(maskPolygon);
@@ -112,10 +127,34 @@ export class MagicCircleSprite {
   }
 
   update(world, circleEntity) {
-    const g = this.root();
     const {
+      time: { delta },
+    } = world;
+
+    const {
+      Velocity,
       Position: { x, y, r },
+      MagicCircle,
+      MagicCircle: {
+        rotationSpeed,
+        rewindSpeedFactor,
+        delayUntilRewind,
+        rewindPeriod,
+      },
     } = circleEntity;
+
+    MagicCircle.phaseDurationRemining -= delta;
+    if (MagicCircle.phaseDurationRemining <= 0) {
+      MagicCircle.isRewinding = MagicCircle.isRewinding ? 0 : 1;
+      Velocity.r = MagicCircle.isRewinding
+        ? (0 - rewindSpeedFactor) * rotationSpeed
+        : rotationSpeed;
+      MagicCircle.phaseDurationRemining = MagicCircle.isRewinding
+        ? rewindPeriod
+        : delayUntilRewind;
+    }
+
+    const g = this.root();
     g.x = x;
     g.y = y;
     g.rotation = r;
