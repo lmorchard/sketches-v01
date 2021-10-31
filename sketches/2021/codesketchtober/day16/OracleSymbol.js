@@ -9,6 +9,8 @@ import FontFutural from "../../../../fonts/futural.json.proxy.js";
 // import FontScriptc from "../../../../fonts/scriptc.json";
 import FontRowmant from "../../../../fonts/rowmant.json.proxy.js";
 
+const ORACLE_SYMBOL_FONT = FontFutural; // FontRomant
+
 export const ORACLE_SYMBOL_AREAS = {
   LINE_1: 1,
   LINE_2: 2,
@@ -103,8 +105,7 @@ export class OracleSymbolEntity extends BaseEntityProxy {
 export class OracleSymbolGlyph {
   constructor(world, symbolEntity, options = {}) {
     const char = String.fromCharCode(symbolEntity.OracleSymbol.char);
-    //this.g = renderGlyph(FontFutural, char);
-    this.g = renderGlyph(FontRowmant, char);
+    this.g = renderGlyph(ORACLE_SYMBOL_FONT, char);
   }
 
   root() {
