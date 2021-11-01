@@ -157,16 +157,15 @@ export class OraclePointerSprite {
 
     gSignals.clear();
     gSignals.lineStyle(2, 0x33ff33, 1);
-
     let firstX = null;
     let firstY = null;
     const signalStep = (2 * Math.PI) / NUM_SIGNAL_POINTS;
     for (let idx = 0; idx < NUM_SIGNAL_POINTS; idx++) {
-      const signal = signalPoints[idx] * 0.87;
+      const signal = signalPoints[idx] * 0.9;
       const noise = perlin.get(
         (idx / NUM_SIGNAL_POINTS) * 10,
         pointerEntity.OraclePointer.noiseElapsed / 500
-      );
+      ) + 0.1;
       const received = Math.min(1.0, Math.max(0.1, signal + noise));
       const distanceRange = reticuleRadius - reticuleInnerRadius;
       const signalDistance = received * distanceRange;
@@ -191,6 +190,8 @@ export class OraclePointerSprite {
     gReticule.y = y;
     gReticule.lineStyle(2, 0x33ff33, 1);
     gReticule.drawCircle(0, 0, reticuleRadius);
+    gReticule.lineStyle(1, 0x33ff33, 1);
+    gReticule.drawCircle(0, 0, reticuleInnerRadius);
 
     gLines.clear();
     gLines.lineStyle(2, 0x33ff33, 1);

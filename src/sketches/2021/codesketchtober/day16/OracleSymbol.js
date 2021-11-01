@@ -9,7 +9,8 @@ import FontFutural from "../../../../fonts/futural.json";
 // import FontScriptc from "../../../../fonts/scriptc.json";
 import FontRowmant from "../../../../fonts/rowmant.json";
 
-const ORACLE_SYMBOL_FONT = FontFutural; // FontRomant
+const ORACLE_SYMBOL_FONT = FontFutural;
+//const ORACLE_SYMBOL_FONT = FontRowmant;
 
 export const ORACLE_SYMBOL_AREAS = {
   LINE_1: 1,
@@ -52,7 +53,7 @@ export class OracleSymbolEntity extends BaseEntityProxy {
     switch (area) {
       case ORACLE_SYMBOL_AREAS.LINE_1: {
         const count = ORACLE_SYMBOL_LINE_1.length;
-        const startY = 0 - (50 * scale);
+        const startY = 0 - (42 * scale);
         const startX = 0 - (width / 2.0) * 0.6;
         const endX = (width / 2.0) * 0.6;
         const stepX = (endX - startX) / (count - 1);
@@ -72,7 +73,7 @@ export class OracleSymbolEntity extends BaseEntityProxy {
       }
       case ORACLE_SYMBOL_AREAS.LINE_3: {
         const count = ORACLE_SYMBOL_LINE_3.length;
-        const startY = (50 * scale);
+        const startY = (42 * scale);
         const startX = 0 - (width / 2.0) * 0.4;
         const endX = (width / 2.0) * 0.4;
         const stepX = (endX - startX) / (count - 1);
@@ -85,7 +86,7 @@ export class OracleSymbolEntity extends BaseEntityProxy {
 }
 
 export class OracleSymbolGlyph {
-  constructor(world, symbolEntity, options = {}) {
+  constructor(world, symbolEntity) {
     const char = String.fromCharCode(symbolEntity.OracleSymbol.char);
     this.g = renderGlyph(ORACLE_SYMBOL_FONT, char);
   }
