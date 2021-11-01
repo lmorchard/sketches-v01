@@ -42,7 +42,6 @@ export class OraclePointerEntity extends BaseEntityProxy {
         for (let idx = 0; idx < NUM_SIGNAL_POINTS; idx++) {
           points.push(0);
         }
-        points[0] = 1.0;
         return points;
       },
     },
