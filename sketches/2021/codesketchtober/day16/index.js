@@ -31,6 +31,8 @@ import {
   MagicCircleSprite,
 } from "./MagicCircle.js";
 
+const MAGIC_CIRCLE_COUNT = 14;
+
 async function main() {
   const world = World.init();
 
@@ -47,21 +49,16 @@ async function main() {
     )
   );
 
-  OraclePointerEntity.spawn(world, {
-    Position: { x: 0, y: 0 },
-  });
+  OraclePointerEntity.spawn(world);
 
-  const step = 150;
-  for (let y = -350; y <= 350; y += 700) {
-    for (let x = -1000; x <= 1000; x += step) {
-      MagicCircleEntity.spawn(world, {
-        Position: { x, y },
-        MagicCircle: {
-          mainRadius: step * 0.4,
-          innerRadius: step * 0.35,
-        },
-      });
-    }
+  for (let idx = 0; idx < MAGIC_CIRCLE_COUNT; idx++) {
+    const m = MagicCircleEntity.spawn(world, {
+      MagicCircle: {
+        row: idx % 2,
+        col: Math.floor(idx / 2),
+        count: MAGIC_CIRCLE_COUNT,
+      },
+    });
   }
 
   for (let [line, area] of [
@@ -166,7 +163,7 @@ const ouijaRenderer = (options) => (world) => {
         g.addChild(sprite.root());
         spriteMap.set(eid, sprite);
       }
-      spriteMap.get(eid).update(world, entity);
+      spriteMap.get(eid).update(world, entity, eids);
     }
     for (const eid of spriteMap.keys()) {
       if (!eids.includes(eid)) {

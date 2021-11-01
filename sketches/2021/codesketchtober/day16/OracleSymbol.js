@@ -9,7 +9,8 @@ import FontFutural from "../../../../fonts/futural.json.proxy.js";
 // import FontScriptc from "../../../../fonts/scriptc.json";
 import FontRowmant from "../../../../fonts/rowmant.json.proxy.js";
 
-const ORACLE_SYMBOL_FONT = FontFutural; // FontRomant
+const ORACLE_SYMBOL_FONT = FontFutural;
+//const ORACLE_SYMBOL_FONT = FontRowmant;
 
 export const ORACLE_SYMBOL_AREAS = {
   LINE_1: 1,
@@ -25,6 +26,7 @@ export const OracleSymbol = defineComponent({
   char: Types.ui8,
   area: Types.ui8,
   order: Types.ui8,
+  scale: Types.f32,
 });
 
 export const oracleSymbolQuery = defineQuery([
@@ -44,24 +46,16 @@ export class OracleSymbolEntity extends BaseEntityProxy {
     const {
       renderer: { width, height },
     } = world;
-    const { area, order } = this.OracleSymbol;
+
+    this.OracleSymbol.scale = width / 700;
+
+    const { area, order, scale } = this.OracleSymbol;
     switch (area) {
       case ORACLE_SYMBOL_AREAS.LINE_1: {
         const count = ORACLE_SYMBOL_LINE_1.length;
-        /*
-        const radius = 2200;
-        const cy = 1900;
-        const cx = 0;
-        const startT = (0 - Math.PI * 0.5) - Math.PI / 13;
-        const endT = (0 - Math.PI * 0.5) + Math.PI / 13;
-        const stepT = (endT - startT) / count;
-        const t = startT + stepT * order;
-        entity.Position.x = cx + Math.cos(t) * radius;
-        entity.Position.y = cy + Math.sin(t) * radius;
-        */
-        const startY = 0 - (height / 2.0) * 0.4;
-        const startX = 0 - (width / 2.0) * 0.8;
-        const endX = (width / 2.0) * 0.8;
+        const startY = 0 - (42 * scale);
+        const startX = 0 - (width / 2.0) * 0.6;
+        const endX = (width / 2.0) * 0.6;
         const stepX = (endX - startX) / (count - 1);
         this.Position.x = startX + stepX * order;
         this.Position.y = startY;
@@ -69,20 +63,9 @@ export class OracleSymbolEntity extends BaseEntityProxy {
       }
       case ORACLE_SYMBOL_AREAS.LINE_2: {
         const count = ORACLE_SYMBOL_LINE_2.length;
-        /*
-        const radius = 2200;
-        const cy = 2050;
-        const cx = 0;
-        const startT = (0 - Math.PI * 0.5) - Math.PI / 13;
-        const endT = (0 - Math.PI * 0.5) + Math.PI / 13;
-        const stepT = (endT - startT) / count;
-        const t = startT + stepT * order;
-        entity.Position.x = cx + Math.cos(t) * radius;
-        entity.Position.y = cy + Math.sin(t) * radius;
-        */
-        const startY = 0 - (height / 2.0) * 0.1;
-        const startX = 0 - (width / 2.0) * 0.8;
-        const endX = (width / 2.0) * 0.8;
+        const startY = 0;
+        const startX = 0 - (width / 2.0) * 0.6;
+        const endX = (width / 2.0) * 0.6;
         const stepX = (endX - startX) / (count - 1);
         this.Position.x = startX + stepX * order;
         this.Position.y = startY;
@@ -90,9 +73,9 @@ export class OracleSymbolEntity extends BaseEntityProxy {
       }
       case ORACLE_SYMBOL_AREAS.LINE_3: {
         const count = ORACLE_SYMBOL_LINE_3.length;
-        const startY = (height / 2.0) * 0.33;
-        const startX = 0 - (width / 2.0) * 0.5;
-        const endX = (width / 2.0) * 0.5;
+        const startY = (42 * scale);
+        const startX = 0 - (width / 2.0) * 0.4;
+        const endX = (width / 2.0) * 0.4;
         const stepX = (endX - startX) / (count - 1);
         this.Position.x = startX + stepX * order;
         this.Position.y = startY;
@@ -103,7 +86,7 @@ export class OracleSymbolEntity extends BaseEntityProxy {
 }
 
 export class OracleSymbolGlyph {
-  constructor(world, symbolEntity, options = {}) {
+  constructor(world, symbolEntity) {
     const char = String.fromCharCode(symbolEntity.OracleSymbol.char);
     this.g = renderGlyph(ORACLE_SYMBOL_FONT, char);
   }
@@ -114,11 +97,11 @@ export class OracleSymbolGlyph {
 
   update(world, symbolEntity) {
     const { g } = this;
-    const { Position } = symbolEntity;
+    const { Position, OracleSymbol } = symbolEntity;
     g.x = Position.x;
     g.y = Position.y;
-    g.scale.x = 2.0;
-    g.scale.y = 2.0;
+    g.scale.x = OracleSymbol.scale;
+    g.scale.y = OracleSymbol.scale;
   }
 }
 
