@@ -3,6 +3,48 @@
 const path = require("path");
 const fs = require("fs");
 const glob = require("glob");
+const cheerio = require("cheerio");
+const dateFns = require("date-fns");
+
+const GITHUB_SRC_PATH =
+  "https://github.com/lmorchard/sketches-v01/tree/main/src";
+const GITHUB_PAGES_PATH = "https://lmorchard.github.io/sketches-v01";
+
+const metaContent = ($, name, defaultValue) =>
+  $(`head meta[property='${name}']`).attr("content") || defaultValue;
+
+// Behold my primitive static site generator shoehorned into snowpack
+function ejsRenderData({ filePath }) {
+  const siteIndexPath = path.dirname(filePath);
+  const sketchesPath = path.join(siteIndexPath, "sketches");
+  const sketchIndexPaths = glob.sync(`${sketchesPath}/**/index.html`);
+
+  const sketches = [];
+  for (const sketchPath of sketchIndexPaths) {
+    const indexStat = fs.statSync(sketchPath);
+    const indexSrc = fs.readFileSync(sketchPath);
+    const $ = cheerio.load(indexSrc);
+
+    const href = path.dirname(
+      sketchPath.replace(`${sketchesPath}/`, "sketches/")
+    );
+    const title = metaContent($, "og:title", $("head title").text());
+    const date = new Date(
+      metaContent($, "og:article:modified_time", indexStat.mtimeMs)
+    );
+    const metaImage = metaContent($, "og:image");
+    const image = metaImage
+      ? `${href}/${metaImage}`
+      : "/images/presentation-svgrepo-com.svg";
+    const description = metaContent($, "og:description");
+
+    sketches.push({ href, title, image, date, description });
+  }
+
+  sketches.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  return { GITHUB_SRC_PATH, dateFns, sketches };
+}
 
 /** @type {import("snowpack").SnowpackUserConfig } */
 module.exports = {
@@ -14,26 +56,8 @@ module.exports = {
     [
       "snowpack-plugin-ejs",
       {
-        renderOptions: {
-          async: true,
-        },
-        // Behold my primitive static site generator shoehorned into snowpack
-        renderData: ({ filePath }) => {
-          const sketchesPath = path.join(path.dirname(filePath), "sketches");
-          const sketches = glob
-            .sync(`${sketchesPath}/**/index.html`)
-            .map((sketchPath) => ({
-              path: sketchPath.replace(`${path.dirname(filePath)}/`, ""),
-              // TODO: scrape name & description from the HTML file
-              // TODO: use directories to come up with separate sections
-              name: sketchPath
-                .replace(`${sketchesPath}/`, "")
-                .split("/")
-                .slice(0, -1)
-                .join(" / "),
-            }));
-          return { sketches };
-        },
+        renderOptions: { async: true },
+        renderData: ejsRenderData,
       },
     ],
     [
@@ -50,9 +74,10 @@ module.exports = {
     ],
     ["snowpack-plugin-wasm-pack", { projectPath: "./src-wasm/wasm_play" }],
     ["snowpack-plugin-wasm-pack", { projectPath: "./src-wasm/perlin" }],
-    // TODO https://www.npmjs.com/package/snowpack-plugin-assets
-    // ["snowpack-plugin-assets", { assets: { from: [], to: "" } }],
-    // ["snowpack-plugin-hash"],
+
+    // FIXME: this is breaking on an error like
+    // (node:4105) UnhandledPromiseRejectionWarning: Error: Can't resolve 'sketches/2021/codesketchtober/day01/index.html' in '/home/lmorchard/devel/sketches-v01/build'
+    //["snowpack-plugin-hash"],
   ],
   packageOptions: {
     polyfillNode: true,

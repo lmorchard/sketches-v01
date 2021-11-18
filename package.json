@@ -38,6 +38,8 @@
   "devDependencies": {
     "@emily-curry/snowpack-plugin-wasm-pack": "^1.1.4",
     "@snowpack/plugin-run-script": "^2.3.0",
+    "cheerio": "^1.0.0-rc.10",
+    "date-fns": "^2.25.0",
     "glob": "^7.2.0",
     "http-server": "^13.0.0",
     "mkdirp": "^1.0.4",
