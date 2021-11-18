@@ -6,17 +6,22 @@
     <meta property="og:type" content="article" />
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="./index.css">
   </head>
   <body class="site-index">
-    <h1>lmorchard sketches-v01</h1>
+    <header>
+      <h1>lmorchard sketches vol 01</h1>
+    </header>
     <ul class="sketches">
       <% for (const { href, date, title, image, description } of sketches) { %>
         <li>
-          <time datetime="<%= date.toISOString() %>"><%= dateFns.format(date, "yyyy MMM dd") %></time>
           <% if (image) { %><a class="image" href="<%= href %>/index.html"><img src="<%= image %>" /></a><% } %>
-          <a class="title" href="<%= href %>/index.html"><%= title %></a>
-          <% if (description) { %><p class="description"><%= description %></p><% } %>
+          <section class="title-description">
+            <a class="title" href="<%= href %>/index.html"><%= title %></a>
+            <% if (description) { %><p class="description"><%= description %></p><% } %>
+          </section>
+          <time datetime="<%= date.toISOString() %>"><%= dateFns.format(date, "yyyy MMM dd") %></time>
           <a class="source" href="<%= GITHUB_SRC_PATH %>/<%= href %>/">Source</a>
         </li>
       <% } %>
