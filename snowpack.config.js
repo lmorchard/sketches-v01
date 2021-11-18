@@ -35,7 +35,7 @@ function ejsRenderData({ filePath }) {
     const metaImage = metaContent($, "og:image");
     const image = metaImage
       ? `${href}/${metaImage}`
-      : "/images/presentation-svgrepo-com.svg";
+      : "./images/presentation-svgrepo-com.svg";
     const description = metaContent($, "og:description");
 
     sketches.push({ href, title, image, date, description });
