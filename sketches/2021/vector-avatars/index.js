@@ -156,9 +156,9 @@ class AvatarSprite {
     gMask.lineStyle(1.5, 0xffffff, 1);
     gMask.beginFill(0xffffff);
     gMask.drawPolygon(
-      ellipsePolygon(0, 0 - a * 0.33, a * 0.66, a * 0.66, 12, 0, PI2)
+      ellipsePolygon(0, 0 - a * 0.33, a * 0.66, a * 0.66, 24, 0, PI2)
     );
-    gMask.drawPolygon(ellipsePolygon(0, b, a, b, 14, PI2 / 2, PI2));
+    gMask.drawPolygon(ellipsePolygon(0, b, a, b, 24, PI2 / 2, PI2));
 
     Object.assign(this, { g, gMask, gTexture });
   }
@@ -183,7 +183,7 @@ class AvatarSprite {
       const ptr = idx * RASTER_REC_LEN;
       const y = entity.Avatar.rasters[ptr] - (entity.Avatar.height / 2);
       const color = entity.Avatar.rasters[ptr + 1];
-      gTexture.lineStyle(1.5, Math.floor(color), 1.0);
+      gTexture.lineStyle(2.5, Math.floor(color), 1.0);
       gTexture.moveTo(0 - entity.Avatar.width / 2, y);
       gTexture.lineTo(entity.Avatar.width / 2, y);      
     }
