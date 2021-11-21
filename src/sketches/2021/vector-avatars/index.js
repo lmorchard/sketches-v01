@@ -56,7 +56,7 @@ async function main() {
   console.log("READY.");
 }
 
-const MAX_NUM_RASTERS = 20;
+const MAX_NUM_RASTERS = 25;
 const RASTER_REC_LEN = 3;
 
 export const Avatar = defineComponent({
@@ -84,7 +84,7 @@ export class AvatarEntity extends BaseEntityProxy {
           rasters.push(
             200 * Math.random(),
             Math.floor(0xffffff * Math.random()),
-            50 + 150 * Math.random()
+            50 + 150 * Math.random() * (Math.random() > 0.5 ? -1 : 1)
           );
         }
         return rasters;
@@ -103,6 +103,9 @@ export class AvatarEntity extends BaseEntityProxy {
       this.Avatar.rasters[ptr] += speed * deltaSec;
       if (this.Avatar.rasters[ptr] > this.Avatar.height) {
         this.Avatar.rasters[ptr] = 0;
+      }
+      if (this.Avatar.rasters[ptr] < 0) {
+        this.Avatar.rasters[ptr] = this.Avatar.height;
       }
     }
   }
