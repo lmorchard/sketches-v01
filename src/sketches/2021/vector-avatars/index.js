@@ -224,14 +224,7 @@ export class AvatarEntity extends BaseEntityProxy {
     const particles = [];
     for (let idx = 0; idx < Avatar.numParticles; idx++) {
       const record = new Array(PARTICLE_RECORD_LENGTH);
-      /*
-      record[AvatarParticleRecordFields.TYPE] = rngChoose(
-        Object.values(AvatarParticleType),
-        rng
-      );
-      */
       record[AvatarParticleRecordFields.TYPE] = particleTypeSelector();
-
       record[AvatarParticleRecordFields.COLOR] = rngIntRange(0, 0xffffff, rng);
       record[AvatarParticleRecordFields.X1] = rngRange(0, width, rng);
       record[AvatarParticleRecordFields.Y1] = rngRange(0, height, rng);
