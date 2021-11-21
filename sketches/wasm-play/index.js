@@ -1,5 +1,5 @@
-import WasmPlayInit from "wasm_play";
-import PerlinInit, { NoiseGrid } from "perlin";
+import WasmPlayInit from "../../dist/wasm_play/index.js";
+import PerlinInit, { NoiseGrid } from "../../dist/perlin/index.js";
 
 async function main() {
   const WasmPlay = await WasmPlayInit();

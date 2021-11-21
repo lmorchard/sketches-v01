@@ -47,7 +47,7 @@ async function main() {
 
   const { paneUpdateSystem } = setupTwiddles({
     title: "Life and Growth",
-    expanded: true,
+    expanded: false,
     world,
     renderOptions,
     lifeOptions,
