@@ -5,6 +5,8 @@ const glob = require("glob");
 const cheerio = require("cheerio");
 const dateFns = require("date-fns");
 
+const DEFAULT_THUMBNAIL = "/images/presentation-svgrepo-com.svg";
+
 const GITHUB_SRC_PATH =
   "https://github.com/lmorchard/sketches-v01/tree/main/src";
 
@@ -14,6 +16,7 @@ module.exports = function (snowpackConfig, pluginOptions = {}) {
   let root, sketchesRoot;
   const options = {
     sketchesRoot: "./src/sketches",
+    sketchesSiteRoot: process.env.GITHUB_PAGES_PATH || GITHUB_PAGES_PATH,
     ...pluginOptions,
   };
 
@@ -42,7 +45,8 @@ module.exports = function (snowpackConfig, pluginOptions = {}) {
       const indexSrc = fs.readFileSync(sketchPath);
       const $ = cheerio.load(indexSrc);
 
-      const href = path.dirname(path.relative(path.dirname(filePath), sketchPath)) + "/";
+      const href =
+        path.dirname(path.relative(path.dirname(filePath), sketchPath)) + "/";
       const title = metaContent($, "og:title", $("head title").text());
       const date = new Date(
         metaContent($, "og:article:modified_time", indexStat.mtimeMs)
@@ -50,7 +54,7 @@ module.exports = function (snowpackConfig, pluginOptions = {}) {
       const metaImage = metaContent($, "og:image");
       const image = metaImage
         ? `${href}${metaImage}`
-        : "./images/presentation-svgrepo-com.svg";
+        : `./${DEFAULT_THUMBNAIL}`;
       const description = metaContent($, "og:description");
 
       sketches.push({ href, title, image, date, description });
@@ -83,11 +87,33 @@ module.exports = function (snowpackConfig, pluginOptions = {}) {
       if (fileExt === ".html" && srcPath.startsWith(sketchesRoot)) {
         const $ = cheerio.load(contents);
         const siteRootPath = path.relative(srcPath, sketchesRoot);
+
         $("head").append(`
           <link rel="stylesheet" href="${siteRootPath}/sketch.css">
           <script src="${siteRootPath}/lib/sketch.js" defer type="module"></script>
           <link rel="top" href="${siteRootPath}/index.html" />
         `);
+
+        const metaImage = $("head meta[property='og:image']");
+        if (metaImage.length) {
+          const sketchPath = path.dirname(srcPath.replace(sketchesRoot, ""));
+          const absoluteImageUrl = path.join(
+            options.sketchesSiteRoot,
+            "sketches",
+            sketchPath,
+            metaImage.attr("content")
+          );
+          metaImage.attr("content", absoluteImageUrl);
+        } else {
+          const absoluteImageUrl = path.join(
+            options.sketchesSiteRoot,
+            DEFAULT_THUMBNAIL
+          );
+          $("head").append(
+            `<meta property="og:image" content="${absoluteImageUrl}">`
+          );
+        }
+
         return $.html();
       }
     },
