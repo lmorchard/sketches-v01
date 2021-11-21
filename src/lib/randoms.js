@@ -25,6 +25,20 @@ export const rngIntRange = (min, max, rng = globalRng) =>
 export const rngChoose = (list, rng = globalRng) =>
   list[rngIntRange(0, list.length - 1, rng)];
 
+export const rngTableSelector = (table, rng) => {
+  let totalChance = Object.values(table).reduce(
+    (total, curr) => total + curr,
+    0
+  );
+  return () => {
+    let choiceIdx = totalChance * rng();
+    for (const [choice, chance] of Object.entries(table)) {
+      choiceIdx -= chance;
+      if (choiceIdx <= 0) return choice;
+    }
+  };
+};
+
 export const rngSign = (rng) => (rng() > 0.5 ? 1 : -1);
 
 export const genid = (rng = globalRng) => Math.floor(rng() * 0xffffffff);

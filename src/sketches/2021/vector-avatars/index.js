@@ -15,6 +15,7 @@ import {
   rngChoose,
   rngIntRange,
   rngSign,
+  rngTableSelector,
 } from "../../../lib/randoms";
 import { autoSizedRenderer, gridRenderer } from "../../../lib/viewport/pixi.js";
 import { Pane } from "tweakpane";
@@ -51,23 +52,33 @@ async function main() {
   });
 
   AvatarEntity.spawn(world, {
-    Avatar: { width: 50, height: 100, seed: 5 },
+    Avatar: { width: 100, height: 100, seed: 11 },
     Position: { x: -150, y: -200 },
   });
 
   AvatarEntity.spawn(world, {
-    Avatar: { width: 50, height: 100, seed: 5 },
+    Avatar: { width: 100, height: 100, seed: 12 },
     Position: { x: 150, y: -200 },
   });
 
   AvatarEntity.spawn(world, {
-    Avatar: { width: 150, height: 100, seed: 6 },
+    Avatar: { width: 150, height: 100, seed: 13 },
     Position: { x: -150, y: 200 },
   });
 
   AvatarEntity.spawn(world, {
-    Avatar: { width: 150, height: 100, seed: 6 },
+    Avatar: { width: 150, height: 100, seed: 14 },
     Position: { x: 150, y: 200 },
+  });
+
+  AvatarEntity.spawn(world, {
+    Avatar: { width: 125, height: 100, seed: 2002 },
+    Position: { x: 0, y: -400 },
+  });
+
+  AvatarEntity.spawn(world, {
+    Avatar: { width: 125, height: 100, seed: 1001 },
+    Position: { x: 0, y: 400 },
   });
 
   console.log("READY.");
@@ -108,6 +119,47 @@ const AvatarParticleType = {
   SQUARE: PARTICLE_TYPE_IDX++,
   BOUNCING_LINE: PARTICLE_TYPE_IDX++,
   BOUNCING_RASTER: PARTICLE_TYPE_IDX++,
+  BOUNCING_VERTICAL: PARTICLE_TYPE_IDX++,
+  BOUNCING_ANGLE_RASTER: PARTICLE_TYPE_IDX++,
+  BOUNCING_ANGLE_VERTICAL: PARTICLE_TYPE_IDX++,
+  HEAD_SPINNER: PARTICLE_TYPE_IDX++,
+  BODY_SPINNER: PARTICLE_TYPE_IDX++,
+};
+
+const AvatarSpecies = {
+  PLAID: {
+    [AvatarParticleType.BOUNCING_RASTER]: 1.0,
+    [AvatarParticleType.BOUNCING_VERTICAL]: 1.0,
+  },
+  RADIAL: {
+    [AvatarParticleType.HEAD_SPINNER]: 2.0,
+    [AvatarParticleType.BODY_SPINNER]: 3.0,
+    [AvatarParticleType.RASTER]: 1.0,
+  },
+  RASTER: {
+    [AvatarParticleType.RASTER]: 1.0,
+  },
+  ANGLER: {
+    [AvatarParticleType.BOUNCING_ANGLE_RASTER]: 2.0,
+    [AvatarParticleType.BOUNCING_ANGLE_VERTICAL]: 1.0,
+  },
+  SQUARES: {
+    [AvatarParticleType.SQUARE]: 3.0,
+    [AvatarParticleType.RASTER]: 1.0,
+  },
+  /*
+  CHAOS: {
+    [AvatarParticleType.RASTER]: 1.0,
+    [AvatarParticleType.SQUARE]: 1.0,
+    [AvatarParticleType.BOUNCING_LINE]: 1.0,
+    [AvatarParticleType.BOUNCING_RASTER]: 1.0,
+    [AvatarParticleType.BOUNCING_VERTICAL]: 1.0,
+    [AvatarParticleType.BOUNCING_ANGLE_RASTER]: 1.0,
+    [AvatarParticleType.BOUNCING_ANGLE_VERTICAL]: 1.0,
+    [AvatarParticleType.HEAD_SPINNER]: 1.0,
+    [AvatarParticleType.BODY_SPINNER]: 1.0,
+  }
+  */
 };
 
 let PARTICLE_RECORD_LENGTH = 0;
@@ -124,7 +176,10 @@ const AvatarParticleRecordFields = {
   DY2: PARTICLE_RECORD_LENGTH++,
 };
 
-const MAX_NUM_PARTICLES = 25;
+const MIN_NUM_PARTICLES = 15;
+const MAX_NUM_PARTICLES = 50;
+const MIN_SPEED = 10;
+const MAX_SPEED = 75;
 
 export const Avatar = defineComponent({
   seed: Types.f32,
@@ -157,28 +212,39 @@ export class AvatarEntity extends BaseEntityProxy {
 
     const rng = mkrng(Avatar.seed);
 
-    Avatar.width = avatarProps.width || rngIntRange(100, 200, rng);
-    Avatar.height = avatarProps.height || rngIntRange(100, 200, rng);
-
     const { width, height } = Avatar;
 
-    Avatar.numParticles = Math.floor(rngRange(15, MAX_NUM_PARTICLES, rng));
+    const species = rngChoose(Object.keys(AvatarSpecies), rng);
+
+    const particleTypeSelector = rngTableSelector(AvatarSpecies[species], rng);
+
+    Avatar.numParticles = Math.floor(
+      rngRange(MIN_NUM_PARTICLES, MAX_NUM_PARTICLES, rng)
+    );
     const particles = [];
     for (let idx = 0; idx < Avatar.numParticles; idx++) {
       const record = new Array(PARTICLE_RECORD_LENGTH);
+      /*
       record[AvatarParticleRecordFields.TYPE] = rngChoose(
         Object.values(AvatarParticleType),
         rng
       );
+      */
+      record[AvatarParticleRecordFields.TYPE] = particleTypeSelector();
+
       record[AvatarParticleRecordFields.COLOR] = rngIntRange(0, 0xffffff, rng);
       record[AvatarParticleRecordFields.X1] = rngRange(0, width, rng);
       record[AvatarParticleRecordFields.Y1] = rngRange(0, height, rng);
       record[AvatarParticleRecordFields.X2] = rngRange(0, width, rng);
       record[AvatarParticleRecordFields.Y2] = rngRange(0, height, rng);
-      record[AvatarParticleRecordFields.DX1] = rngRange(150, 300, rng) * rngSign(rng);
-      record[AvatarParticleRecordFields.DY1] = rngRange(150, 300, rng) * rngSign(rng);
-      record[AvatarParticleRecordFields.DX2] = rngRange(150, 300, rng) * rngSign(rng);
-      record[AvatarParticleRecordFields.DY2] = rngRange(150, 300, rng) * rngSign(rng);
+      record[AvatarParticleRecordFields.DX1] =
+        rngRange(MIN_SPEED, MAX_SPEED, rng) * rngSign(rng);
+      record[AvatarParticleRecordFields.DY1] =
+        rngRange(MIN_SPEED, MAX_SPEED, rng) * rngSign(rng);
+      record[AvatarParticleRecordFields.DX2] =
+        rngRange(MIN_SPEED, MAX_SPEED, rng) * rngSign(rng);
+      record[AvatarParticleRecordFields.DY2] =
+        rngRange(MIN_SPEED, MAX_SPEED, rng) * rngSign(rng);
       particles.push(...record);
     }
     Avatar.particles.set(particles);
@@ -268,21 +334,21 @@ class AvatarSprite {
     const hWidth = width / 2;
     const hHeight = height / 2;
 
-    gMask.drawPolygon(ellipsePolygon(
-      0, 0 - height * 0.25,
-      height * 0.25, height * 0.25,
-      24,
-      0,
-      PI2
-    ));
+    gMask.drawPolygon(
+      ellipsePolygon(
+        0,
+        0 - height * 0.25,
+        height * 0.25,
+        height * 0.25,
+        12,
+        0,
+        PI2
+      )
+    );
 
-    gMask.drawPolygon(ellipsePolygon(
-      0, hHeight,
-      hWidth, height * 0.6,
-      24,
-      PI2 / 2,
-      PI2
-    ));
+    gMask.drawPolygon(
+      ellipsePolygon(0, hHeight, hWidth, height * 0.6, 12, Math.PI, PI2)
+    );
 
     Object.assign(this, { g, gMask, gTexture });
   }
@@ -308,7 +374,7 @@ class AvatarSprite {
     for (let idx = 0; idx < numParticles; idx++) {
       const ptr = idx * PARTICLE_RECORD_LENGTH;
       gTexture.lineStyle(
-        1.5,
+        1.0,
         Math.floor(particles[ptr + AvatarParticleRecordFields.COLOR]),
         1.0
       );
@@ -354,11 +420,72 @@ class AvatarSprite {
           );
           gTexture.lineTo(
             width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y1] - height / 2
+          );
+          break;
+        case AvatarParticleType.BOUNCING_VERTICAL:
+          gTexture.moveTo(
+            particles[ptr + AvatarParticleRecordFields.X1] - width / 2,
+            0 - height / 2
+          );
+          gTexture.lineTo(
+            particles[ptr + AvatarParticleRecordFields.X1] - width / 2,
+            height / 2
+          );
+          break;
+        case AvatarParticleType.BOUNCING_ANGLE_RASTER:
+          gTexture.moveTo(
+            0 - width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y1] - height / 2
+          );
+          gTexture.lineTo(
+            width / 2,
             particles[ptr + AvatarParticleRecordFields.Y2] - height / 2
+          );
+          break;
+        case AvatarParticleType.BOUNCING_ANGLE_VERTICAL:
+          gTexture.moveTo(
+            particles[ptr + AvatarParticleRecordFields.X1] - width / 2,
+            0 - height / 2
+          );
+          gTexture.lineTo(
+            particles[ptr + AvatarParticleRecordFields.X2] - width / 2,
+            height / 2
+          );
+          break;
+        case AvatarParticleType.HEAD_SPINNER:
+          this.drawSpinner(
+            gTexture,
+            PI2 * (particles[ptr + AvatarParticleRecordFields.X2] / width),
+            0,
+            0 - height * 0.25,
+            width * 0.25,
+            0
+          );
+          break;
+        case AvatarParticleType.BODY_SPINNER:
+          this.drawSpinner(
+            gTexture,
+            PI2 * (particles[ptr + AvatarParticleRecordFields.X2] / width),
+            0,
+            height * 0.33,
+            width * 0.5,
+            0
           );
           break;
       }
     }
+  }
+
+  drawSpinner(g, angle, cx, cy, dx, dy) {
+    const x = Math.cos(angle) * dx - Math.sin(angle) * dy + cx;
+    const y = Math.sin(angle) * dx - Math.cos(angle) * dy + cy;
+    const x2 =
+      Math.cos(Math.PI + angle) * dx - Math.sin(Math.PI + angle) * dy + cx;
+    const y2 =
+      Math.sin(Math.PI + angle) * dx - Math.cos(Math.PI + angle) * dy + cy;
+    g.moveTo(x, y);
+    g.lineTo(x2, y2);
   }
 }
 
