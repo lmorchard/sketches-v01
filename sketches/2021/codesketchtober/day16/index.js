@@ -2,6 +2,7 @@ import { pipe } from "../../../../vendor/pkg/bitecs.js";
 import * as World from "../../../../lib/world.js";
 import { SmoothGraphics as Graphics } from "../../../../vendor/pkg/@pixi/graphics-smooth.js";
 import { movementSystem } from "../../../../lib/positionMotion.js";
+import { updateEntities, updateSprites } from "../../../../lib/ecsUtils.js";
 
 import {
   autoSizedRenderer,
@@ -82,7 +83,7 @@ async function main() {
 
 const ouijaUpdateSystem = (options) => (world) => {
   const symbolEids = oracleSymbolQuery(world);
-  const updates = [
+  return updateEntities(world,  [
     [magicCircleQuery, MagicCircleEntity],
     [oracleSymbolQuery, OracleSymbolEntity],
     [
@@ -96,17 +97,7 @@ const ouijaUpdateSystem = (options) => (world) => {
         }
       },
     ],
-  ];
-  for (const [query, Entity, customUpdate = () => {}] of updates) {
-    const eids = query(world);
-    const entity = new Entity();
-    for (const eid of eids) {
-      entity.eid = eid;
-      customUpdate(entity);
-      entity.update(world);
-    }
-  } 
-  return world;
+  ]);
 };
 
 const ouijaRendererInit = (world) => {
@@ -129,7 +120,7 @@ const ouijaRenderer = (options) => (world) => {
 
   g.clear();
 
-  const spriteUpdates = [
+  updateSprites(world, g, [
     [
       magicCircleQuery,
       MagicCircleEntity,
@@ -148,31 +139,8 @@ const ouijaRenderer = (options) => (world) => {
       OracleSymbolGlyph,
       "oracleSymbolSprites",
     ],
-  ];
-  for (const [query, Entity, Sprite, spriteMapName] of spriteUpdates) {
-    if (!world[spriteMapName]) {
-      world[spriteMapName] = new Map();
-    }
-    const spriteMap = world[spriteMapName];
-    const eids = query(world);
-    const entity = new Entity();
-    for (const eid of eids) {
-      entity.eid = eid;
-      if (!spriteMap.has(eid)) {
-        const sprite = new Sprite(world, entity);
-        g.addChild(sprite.root());
-        spriteMap.set(eid, sprite);
-      }
-      spriteMap.get(eid).update(world, entity, eids);
-    }
-    for (const eid of spriteMap.keys()) {
-      if (!eids.includes(eid)) {
-        g.removeChild(spriteMap.get(eid).root());
-        spriteMap.delete(eid);
-      }
-    }
-  }
-
+  ]);
+ 
   return world;
 };
 
