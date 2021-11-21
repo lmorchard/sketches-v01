@@ -84,9 +84,15 @@ ul.sketches li time {
   ul.sketches li {
     width: calc(30% - 1rem);
   }
+  #info-box .box {
+    max-width: 50%;
+  }
 }
 @media (min-width: 1200px) {
   ul.sketches li {
     width: calc(22% - 1rem);
+  }
+  #info-box .box {
+    max-width: 75%;
   }
 }

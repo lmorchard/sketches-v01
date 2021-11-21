@@ -16,13 +16,13 @@
     <ul class="sketches">
       <% for (const { href, date, title, image, description } of sketches) { %>
         <li>
-          <% if (image) { %><a class="image" href="<%= href %>/index.html"><img src="<%= image %>" /></a><% } %>
+          <% if (image) { %><a class="image" href="<%= href %>index.html"><img src="<%= image %>" /></a><% } %>
           <section class="title-description">
-            <a class="title" href="<%= href %>/index.html"><%= title %></a>
+            <a class="title" href="<%= href %>"><%= title %></a>
             <% if (description) { %><p class="description"><%= description %></p><% } %>
           </section>
           <time datetime="<%= date.toISOString() %>"><%= dateFns.format(date, "yyyy MMM dd") %></time>
-          <a class="source" href="<%= GITHUB_SRC_PATH %>/<%= href %>/">Source</a>
+          <a class="source" href="<%= GITHUB_SRC_PATH %>/<%= href %>">Source</a>
         </li>
       <% } %>
     </ul>
