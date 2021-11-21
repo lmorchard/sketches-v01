@@ -3,9 +3,19 @@ import { pipe, defineQuery, defineComponent, Types } from "../../../vendor/pkg/b
 import * as World from "../../../lib/world.js";
 import { SmoothGraphics as Graphics } from "../../../vendor/pkg/@pixi/graphics-smooth.js";
 import { movementSystem } from "../../../lib/positionMotion.js";
-import { BaseEntityProxy, updateEntities, updateSprites } from "../../../lib/ecsUtils.js";
+import {
+  BaseEntityProxy,
+  updateEntities,
+  updateSprites,
+} from "../../../lib/ecsUtils.js";
 import { Position, Velocity } from "../../../lib/positionMotion.js";
-
+import {
+  mkrng,
+  rngRange,
+  rngChoose,
+  rngIntRange,
+  rngSign,
+} from "../../../lib/randoms.js";
 import { autoSizedRenderer, gridRenderer } from "../../../lib/viewport/pixi.js";
 import { Pane } from "../../../vendor/pkg/tweakpane.js";
 
@@ -26,170 +36,41 @@ async function main() {
   );
 
   AvatarEntity.spawn(world, {
+    Avatar: { width: 100, height: 100, seed: 1234 },
     Position: { x: 0, y: 0 },
   });
 
   AvatarEntity.spawn(world, {
+    Avatar: { width: 100, height: 100, seed: 5678 },
     Position: { x: -300, y: 0 },
   });
 
   AvatarEntity.spawn(world, {
+    Avatar: { width: 100, height: 100, seed: 9999 },
     Position: { x: 300, y: 0 },
   });
 
   AvatarEntity.spawn(world, {
+    Avatar: { width: 50, height: 100, seed: 5 },
     Position: { x: -150, y: -200 },
   });
 
   AvatarEntity.spawn(world, {
+    Avatar: { width: 50, height: 100, seed: 5 },
     Position: { x: 150, y: -200 },
   });
 
   AvatarEntity.spawn(world, {
+    Avatar: { width: 150, height: 100, seed: 6 },
     Position: { x: -150, y: 200 },
   });
 
   AvatarEntity.spawn(world, {
+    Avatar: { width: 150, height: 100, seed: 6 },
     Position: { x: 150, y: 200 },
   });
 
   console.log("READY.");
-}
-
-const MAX_NUM_RASTERS = 25;
-const RASTER_REC_LEN = 3;
-
-export const Avatar = defineComponent({
-  seed: Types.f32,
-  width: Types.f32,
-  height: Types.f32,
-  rasters: [Types.f32, MAX_NUM_RASTERS * RASTER_REC_LEN],
-});
-
-export const avatarQuery = defineQuery([Position, Velocity, Avatar]);
-
-export class AvatarEntity extends BaseEntityProxy {
-  static components = {
-    Position,
-    Velocity,
-    Avatar,
-  };
-  static defaults = {
-    Avatar: {
-      width: 100,
-      height: 200,
-      rasters: () => {
-        const rasters = [];
-        for (let idx = 0; idx < MAX_NUM_RASTERS; idx++) {
-          rasters.push(
-            200 * Math.random(),
-            Math.floor(0xffffff * Math.random()),
-            50 + 150 * Math.random() * (Math.random() > 0.5 ? -1 : 1)
-          );
-        }
-        return rasters;
-      },
-    },
-  };
-
-  update(world) {
-    const {
-      time: { deltaSec }
-    } = world;
-
-    for (let idx = 0; idx < MAX_NUM_RASTERS; idx++) {
-      const ptr = idx * RASTER_REC_LEN;
-      const speed = this.Avatar.rasters[ptr + 2];
-      this.Avatar.rasters[ptr] += speed * deltaSec;
-      if (this.Avatar.rasters[ptr] > this.Avatar.height) {
-        this.Avatar.rasters[ptr] = 0;
-      }
-      if (this.Avatar.rasters[ptr] < 0) {
-        this.Avatar.rasters[ptr] = this.Avatar.height;
-      }
-    }
-  }
-}
-
-const PI2 = Math.PI * 2.0;
-
-function ellipsePolygon(
-  centerX,
-  centerY,
-  a,
-  b,
-  numPoints,
-  angleStart,
-  angleEnd
-) {
-  const angleStep = (angleEnd - angleStart) / numPoints;
-  const points = [];
-  for (let angle = angleStart; angle <= angleEnd; angle += angleStep) {
-    const x = a * Math.cos(angle) + centerX;
-    const y = b * Math.sin(angle) + centerY;
-    points.push(new PIXI.Point(x, y));
-  }
-  return new PIXI.Polygon(points);
-}
-
-class AvatarSprite {
-  static defaultOptions = {};
-
-  constructor(world, options = {}) {
-    this.options = { ...this.constructor.defaultOptions, ...options };
-
-    const g = new Graphics();
-
-    const gTexture = new Graphics();
-    g.addChild(gTexture);
-
-    const gMask = new Graphics();
-    gTexture.addChild(gMask);
-    gTexture.mask = gMask;
-   
-    gMask.clear();
-
-    const a = 50;
-    const b = 100;
-
-    gMask.drawCircle(0, 0, 25);
-    gMask.lineStyle(1.5, 0xffffff, 1);
-    gMask.beginFill(0xffffff);
-    gMask.drawPolygon(
-      ellipsePolygon(0, 0 - a * 0.33, a * 0.66, a * 0.66, 24, 0, PI2)
-    );
-    gMask.drawPolygon(ellipsePolygon(0, b, a, b, 24, PI2 / 2, PI2));
-
-    Object.assign(this, { g, gMask, gTexture });
-  }
-
-  root() {
-    return this.g;
-  }
-
-  update(world, entity) {
-    const {
-      Position: { x, y, r },
-    } = entity;
-
-    const { g, gTexture } = this;
-    g.x = x;
-    g.y = y;
-    g.rotation = r;
-
-    gTexture.clear();
-
-    for (let idx = 0; idx < MAX_NUM_RASTERS; idx++) {
-      const ptr = idx * RASTER_REC_LEN;
-      const y = entity.Avatar.rasters[ptr] - (entity.Avatar.height / 2);
-      const color = entity.Avatar.rasters[ptr + 1];
-      gTexture.lineStyle(2.5, Math.floor(color), 1.0);
-      gTexture.moveTo(0 - entity.Avatar.width / 2, y);
-      gTexture.lineTo(entity.Avatar.width / 2, y);      
-    }
-
-    window.avatar = entity;
-  }
 }
 
 const avatarUpdateSystem = (options) => (world) => {
@@ -220,6 +101,266 @@ const avatarRenderer = (options) => (world) => {
     [avatarQuery, AvatarEntity, AvatarSprite, "avatarprites"],
   ]);
 };
+
+let PARTICLE_TYPE_IDX = 0;
+const AvatarParticleType = {
+  RASTER: PARTICLE_TYPE_IDX++,
+  SQUARE: PARTICLE_TYPE_IDX++,
+  BOUNCING_LINE: PARTICLE_TYPE_IDX++,
+  BOUNCING_RASTER: PARTICLE_TYPE_IDX++,
+};
+
+let PARTICLE_RECORD_LENGTH = 0;
+const AvatarParticleRecordFields = {
+  TYPE: PARTICLE_RECORD_LENGTH++,
+  COLOR: PARTICLE_RECORD_LENGTH++,
+  X1: PARTICLE_RECORD_LENGTH++,
+  Y1: PARTICLE_RECORD_LENGTH++,
+  DX1: PARTICLE_RECORD_LENGTH++,
+  DY1: PARTICLE_RECORD_LENGTH++,
+  X2: PARTICLE_RECORD_LENGTH++,
+  Y2: PARTICLE_RECORD_LENGTH++,
+  DX2: PARTICLE_RECORD_LENGTH++,
+  DY2: PARTICLE_RECORD_LENGTH++,
+};
+
+const MAX_NUM_PARTICLES = 25;
+
+export const Avatar = defineComponent({
+  seed: Types.f32,
+  width: Types.f32,
+  height: Types.f32,
+  numParticles: Types.ui8,
+  particles: [Types.f32, MAX_NUM_PARTICLES * PARTICLE_RECORD_LENGTH],
+});
+
+export const avatarQuery = defineQuery([Position, Velocity, Avatar]);
+
+export class AvatarEntity extends BaseEntityProxy {
+  static components = {
+    Position,
+    Velocity,
+    Avatar,
+  };
+
+  static defaults = {
+    Avatar: {
+      seed: () => Math.random(),
+    },
+  };
+
+  static spawn(world, props = {}) {
+    const entity = super.spawn(world, props);
+    const avatarProps = props.Avatar || {};
+
+    const { Avatar } = entity;
+
+    const rng = mkrng(Avatar.seed);
+
+    Avatar.width = avatarProps.width || rngIntRange(100, 200, rng);
+    Avatar.height = avatarProps.height || rngIntRange(100, 200, rng);
+
+    const { width, height } = Avatar;
+
+    Avatar.numParticles = Math.floor(rngRange(15, MAX_NUM_PARTICLES, rng));
+    const particles = [];
+    for (let idx = 0; idx < Avatar.numParticles; idx++) {
+      const record = new Array(PARTICLE_RECORD_LENGTH);
+      record[AvatarParticleRecordFields.TYPE] = rngChoose(
+        Object.values(AvatarParticleType),
+        rng
+      );
+      record[AvatarParticleRecordFields.COLOR] = rngIntRange(0, 0xffffff, rng);
+      record[AvatarParticleRecordFields.X1] = rngRange(0, width, rng);
+      record[AvatarParticleRecordFields.Y1] = rngRange(0, height, rng);
+      record[AvatarParticleRecordFields.X2] = rngRange(0, width, rng);
+      record[AvatarParticleRecordFields.Y2] = rngRange(0, height, rng);
+      record[AvatarParticleRecordFields.DX1] = rngRange(150, 300, rng) * rngSign(rng);
+      record[AvatarParticleRecordFields.DY1] = rngRange(150, 300, rng) * rngSign(rng);
+      record[AvatarParticleRecordFields.DX2] = rngRange(150, 300, rng) * rngSign(rng);
+      record[AvatarParticleRecordFields.DY2] = rngRange(150, 300, rng) * rngSign(rng);
+      particles.push(...record);
+    }
+    Avatar.particles.set(particles);
+
+    return entity;
+  }
+
+  update(world) {
+    const {
+      time: { deltaSec },
+    } = world;
+
+    const { Avatar } = this;
+    const { numParticles, particles } = Avatar;
+
+    const updates = [
+      ["width", AvatarParticleRecordFields.X1, AvatarParticleRecordFields.DX1],
+      ["width", AvatarParticleRecordFields.X2, AvatarParticleRecordFields.DX2],
+      ["height", AvatarParticleRecordFields.Y1, AvatarParticleRecordFields.DY1],
+      ["height", AvatarParticleRecordFields.Y2, AvatarParticleRecordFields.DY2],
+    ];
+    for (let idx = 0; idx < numParticles; idx++) {
+      const ptr = idx * PARTICLE_RECORD_LENGTH;
+      for (let [boundName, varyingOffset, speedOffset] of updates) {
+        let speed = particles[ptr + speedOffset];
+        let varying = particles[ptr + varyingOffset] + speed * deltaSec;
+        if (varying < 0) {
+          varying = 0;
+          speed = speed * -1;
+        } else if (varying > Avatar[boundName]) {
+          varying = Avatar[boundName];
+          speed = speed * -1;
+        }
+        particles[ptr + speedOffset] = speed;
+        particles[ptr + varyingOffset] = varying;
+      }
+    }
+  }
+}
+
+const PI2 = Math.PI * 2.0;
+
+function ellipsePolygon(
+  centerX,
+  centerY,
+  radiusX,
+  radiusY,
+  numPoints,
+  angleStart,
+  angleEnd
+) {
+  const angleStep = (angleEnd - angleStart) / numPoints;
+  const points = [];
+  for (let angle = angleStart; angle <= angleEnd; angle += angleStep) {
+    const x = radiusX * Math.cos(angle) + centerX;
+    const y = radiusY * Math.sin(angle) + centerY;
+    points.push(new PIXI.Point(x, y));
+  }
+  return new PIXI.Polygon(points);
+}
+
+class AvatarSprite {
+  static defaultOptions = {};
+
+  constructor(world, entity, options = {}) {
+    this.options = { ...this.constructor.defaultOptions, ...options };
+
+    const {
+      Avatar,
+      Avatar: { width, height },
+    } = entity;
+
+    const g = new Graphics();
+
+    const gTexture = new Graphics();
+    g.addChild(gTexture);
+
+    const gMask = new Graphics();
+    gTexture.addChild(gMask);
+    gTexture.mask = gMask;
+
+    gMask.clear();
+
+    gMask.lineStyle(1.5, 0xffffff, 1);
+    gMask.beginFill(0xffffff);
+
+    const hWidth = width / 2;
+    const hHeight = height / 2;
+
+    gMask.drawPolygon(ellipsePolygon(
+      0, 0 - height * 0.25,
+      height * 0.25, height * 0.25,
+      24,
+      0,
+      PI2
+    ));
+
+    gMask.drawPolygon(ellipsePolygon(
+      0, hHeight,
+      hWidth, height * 0.6,
+      24,
+      PI2 / 2,
+      PI2
+    ));
+
+    Object.assign(this, { g, gMask, gTexture });
+  }
+
+  root() {
+    return this.g;
+  }
+
+  update(world, entity) {
+    const {
+      Avatar,
+      Avatar: { width, height, numParticles, particles },
+      Position: { x, y, r },
+    } = entity;
+
+    const { g, gTexture } = this;
+    g.x = x;
+    g.y = y;
+    g.rotation = r;
+
+    gTexture.clear();
+
+    for (let idx = 0; idx < numParticles; idx++) {
+      const ptr = idx * PARTICLE_RECORD_LENGTH;
+      gTexture.lineStyle(
+        1.5,
+        Math.floor(particles[ptr + AvatarParticleRecordFields.COLOR]),
+        1.0
+      );
+      switch (particles[ptr + AvatarParticleRecordFields.TYPE]) {
+        case AvatarParticleType.RASTER:
+          gTexture.moveTo(
+            0 - width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y1] - height / 2
+          );
+          gTexture.lineTo(
+            width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y1] - height / 2
+          );
+          break;
+        case AvatarParticleType.SQUARE:
+          gTexture.drawRect(
+            particles[ptr + AvatarParticleRecordFields.X1] - width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y1] - height / 2,
+            Math.abs(
+              particles[ptr + AvatarParticleRecordFields.X1] -
+                particles[ptr + AvatarParticleRecordFields.X2]
+            ),
+            Math.abs(
+              particles[ptr + AvatarParticleRecordFields.Y1] -
+                particles[ptr + AvatarParticleRecordFields.Y2]
+            )
+          );
+          break;
+        case AvatarParticleType.BOUNCING_LINE:
+          gTexture.moveTo(
+            particles[ptr + AvatarParticleRecordFields.X1] - width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y1] - height / 2
+          );
+          gTexture.lineTo(
+            particles[ptr + AvatarParticleRecordFields.X2] - width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y2] - height / 2
+          );
+          break;
+        case AvatarParticleType.BOUNCING_RASTER:
+          gTexture.moveTo(
+            0 - width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y1] - height / 2
+          );
+          gTexture.lineTo(
+            width / 2,
+            particles[ptr + AvatarParticleRecordFields.Y2] - height / 2
+          );
+          break;
+      }
+    }
+  }
+}
 
 function setupTwiddles({ title = document.title, expanded = false, world }) {
   const pane = new Pane();
