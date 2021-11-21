@@ -16,11 +16,18 @@ export function mkrng(seed) {
   return new rngClass(seed);
 }
 
+export const rngRange = (min, max, rng = globalRng) =>
+  rng() * (max - min) + min;
+
 export const rngIntRange = (min, max, rng = globalRng) =>
   Math.floor(rng() * (max + 1 - min) + min);
 
-export const genid = (rng = globalRng) =>
-  Math.floor(rng() * 0xffffffff);
+export const rngChoose = (list, rng = globalRng) =>
+  list[rngIntRange(0, list.length - 1, rng)];
+
+export const rngSign = (rng) => (rng() > 0.5 ? 1 : -1);
+
+export const genid = (rng = globalRng) => Math.floor(rng() * 0xffffffff);
 
 export const genHex = (rng = globalRng) =>
   Math.floor(rng() * 0xffff)
