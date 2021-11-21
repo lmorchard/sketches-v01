@@ -54,7 +54,7 @@ module.exports = function (snowpackConfig, pluginOptions = {}) {
       const metaImage = metaContent($, "og:image");
       const image = metaImage
         ? `${href}${metaImage}`
-        : `./${DEFAULT_THUMBNAIL}`;
+        : `.${DEFAULT_THUMBNAIL}`;
       const description = metaContent($, "og:description");
 
       sketches.push({ href, title, image, date, description });
