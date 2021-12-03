@@ -56,5 +56,21 @@ export const genUniqueHex = (prefix, obj, rng = globalRng) => {
   return addr;
 };
 
+// Stolen from / inspired by Text Elite from Ian Bell
+// www.iancgbell.clara.net/elite/text/
+const pairs =
+  "..LEXEGEZACEBISOUSESARMAINDIREA.ERATENBERALAVETIEDORQUANTEISRION";
+const pairsCount = Math.floor(pairs.length / 2);
+export function genName(rng) {
+  let name = "";
+  const rounds = 2 + Math.floor(rng() * 3);
+  for (let round = 0; round < rounds; round++) {
+    const idx = Math.floor(rng() * pairsCount) * 2;
+    name += pairs.substring(idx, idx + 2);
+  }
+  name = name.replace(/\./g, "");
+  return name.substring(0, 1) + name.substring(1).toLowerCase();
+}
+
 export let rngClass = seedrandom;
 export let globalRng = mkrng("default");
